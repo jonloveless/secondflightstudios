@@ -4,7 +4,7 @@
   const button = document.querySelector('#run-test');
   const input = document.querySelector('#test-token');
   const result = document.querySelector('#test-result');
-  let challengeToken = '', widgetId, busy = false;
+  let challengeToken = '', widgetId, busy = false, hasResult = false;
   const refresh = () => { button.disabled = busy || !challengeToken || input.value.length < 32; };
   if (location.origin !== expectedOrigin) {
     input.disabled = true;
@@ -16,9 +16,9 @@
   window.sfsTurnstileReady = () => {
     widgetId = window.turnstile.render('#turnstile-container', {
       sitekey: '0x4AAAAAAEx2JqLT8A6b7dNC', action: 'hvac_intake_test',
-      callback: token => { challengeToken = token; result.textContent = 'Verification complete. Enter your private test token to continue.'; refresh(); },
-      'expired-callback': () => { challengeToken = ''; result.textContent = 'Verification expired. Complete it again.'; refresh(); },
-      'error-callback': () => { challengeToken = ''; result.textContent = 'Verification could not load. Refresh this page and try again.'; refresh(); },
+      callback: token => { challengeToken = token; if (!hasResult) result.textContent = 'Verification complete. Enter your private test token to continue.'; refresh(); },
+      'expired-callback': () => { challengeToken = ''; if (!hasResult) result.textContent = 'Verification expired. Complete it again.'; refresh(); },
+      'error-callback': () => { challengeToken = ''; if (!hasResult) result.textContent = 'Verification could not load. Refresh this page and try again.'; refresh(); },
     });
   };
   const script = document.createElement('script');
@@ -28,7 +28,7 @@
   document.head.append(script);
   button.addEventListener('click', async () => {
     if (button.disabled) return;
-    busy = true; refresh();
+    busy = true; hasResult = false; refresh();
     const authorization = 'Bearer ' + input.value;
     input.value = '';
     result.textContent = 'Checking the synthetic request…';
@@ -51,6 +51,7 @@
     } catch {
       result.textContent = 'The test could not be completed. Check your connection and the preview deployment.';
     } finally {
+      hasResult = true;
       challengeToken = ''; busy = false;
       if (widgetId !== undefined) window.turnstile.reset(widgetId);
       refresh();
