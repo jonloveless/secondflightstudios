@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Controlled intake test | Second Flight Studios</title>
+  <link rel="stylesheet" href="assets/css/intake-test.css">
+  <script src="assets/js/intake-test.js" defer></script>
+</head>
+<body>
+  <header><a href="demo">SFS<span>.</span> <small>SECOND FLIGHT STUDIOS</small></a></header>
+  <main>
+    <p class="eyebrow">OPERATOR TEST · SYNTHETIC DETAILS ONLY</p>
+    <h1>Check the secure intake.</h1>
+    <p>This test validates a sample request on Cloudflare. It sends no lead to Make, sends no notifications, and books no appointment.</p>
+    <section aria-labelledby="sample-title">
+      <h2 id="sample-title">Sample request</h2>
+      <dl><dt>Name</dt><dd>Demo Customer</dd><dt>Phone</dt><dd>(802) 555-0147</dd><dt>ZIP</dt><dd>05401</dd><dt>Issue</dt><dd>Test only: heat pump is not warming the house.</dd><dt>SMS consent</dt><dd>No — synthetic test</dd></dl>
+    </section>
+    <section aria-labelledby="access-title">
+      <h2 id="access-title">Run a private check</h2>
+      <p>Enter the <strong>INTAKE_TEST_TOKEN</strong> you saved in your password manager. This is not your Turnstile secret key. The token is sent only to this preview’s endpoint and cleared from the field when you run the test.</p>
+      <label for="test-token">Private test token</label>
+      <input id="test-token" type="password" autocomplete="off" spellcheck="false" minlength="32" maxlength="256">
+      <div id="turnstile"></div>
+      <button id="run-test" type="button" disabled>Run dry-run test</button>
+      <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
+      <noscript><p>JavaScript is required for this controlled test.</p></noscript>
+    </section>
+    <p class="footnote">The public demo remains separate. This page does not store tokens or test details in browser storage.</p>
+  </main>
+</body>
+</html>

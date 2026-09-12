@@ -13,7 +13,7 @@ Future operator-only preview configuration (not configured by this PR):
 - INTAKE_TEST_TOKEN: randomly generated secret of at least 32 characters; store only as a Cloudflare secret
 - TURNSTILE_SECRET_KEY: preview widget secret, stored only as a Cloudflare secret
 
-Requests require JSON, exact same-origin Origin, Authorization: Bearer with the private test token, and a fresh Turnstile token with action `hvac_intake_test` and the exact preview hostname. Do not embed the private token in a website, URL, repository, screenshot, or browser storage. There is no browser test console in this phase. A trusted operator harness and preview Turnstile widget must be configured before remote successful-path tests.
+Requests require JSON, exact same-origin Origin, Authorization: Bearer with the private test token, and a fresh Turnstile token with action `hvac_intake_test` and the exact preview hostname. Do not embed the private token in a website, URL, repository, screenshot, or browser storage. An operator test page is available at /intake-test on the feature-hvac-secure-intake branch preview only. It uses fixed synthetic data and the public Turnstile site key. The operator enters the private test token into a password field; it is sent only in the same-origin Authorization header and cleared on submission. It is never written to browser storage. Complete any Turnstile challenge yourself. The preview secrets must be configured before remote successful-path tests.
 
 ## Contract
 
