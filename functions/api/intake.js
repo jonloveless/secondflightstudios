@@ -11,7 +11,7 @@ function reply(status, body) {
     'Referrer-Policy': 'no-referrer', 'Allow': 'POST',
   }});
 }
-const fail = status => reply(status, { ok: false, message: 'Request could not be processed.' });
+const fail = (status, code = 'REQUEST_REJECTED') => reply(status, { ok: false, code, message: 'Request could not be processed.' });
 
 export function normalizePhone(value) {
   if (!/^[+\d\s().-]+$/.test(value)) throw new Error('invalid');
@@ -87,7 +87,7 @@ export async function handle(request, env, dependencies = {}) {
   try {
     if (request.method !== 'POST') return fail(405);
     // Never enabled by a client field. Missing or production configuration fails closed.
-    if (env.INTAKE_MODE !== 'controlled-dry-run' || !env.INTAKE_TEST_TOKEN || env.INTAKE_TEST_TOKEN.length < 32 || !env.TURNSTILE_SECRET_KEY) return fail(503);
+    if (env.INTAKE_MODE !== 'controlled-dry-run' || !env.INTAKE_TEST_TOKEN || env.INTAKE_TEST_TOKEN.length < 32 || !env.TURNSTILE_SECRET_KEY) return fail(503, 'PREVIEW_CONFIGURATION');
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (!origin || origin !== env.INTAKE_TEST_ORIGIN || origin !== url.origin || url.search) return fail(403);
@@ -106,14 +106,14 @@ export async function handle(request, env, dependencies = {}) {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(5000),
       body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: data.turnstile_token, remoteip: ip }),
     });
-    if (!verification.ok) return fail(503);
+    if (!verification.ok) return fail(503, 'TURNSTILE_UNAVAILABLE');
     const result = await verification.json();
     if (result.success !== true || result.hostname !== url.hostname || result.action !== 'hvac_intake_test') return fail(403);
     // Validate the intended downstream contract without transmitting or retaining it.
     if (!payload.phone || !payload.consent.recorded_at) return fail(400);
     return reply(200, { ok: true, mode: 'dry-run', forwarded: false,
       message: 'Test validated. Nothing was sent. No appointment is confirmed.' });
-  } catch { return fail(503); }
+  } catch { return fail(503, 'PREVIEW_RUNTIME'); }
 }
 
 export const onRequest = ({ request, env }) => handle(request, env);
