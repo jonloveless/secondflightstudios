@@ -105,7 +105,7 @@ export async function handle(request, env, dependencies = {}) {
     if (!data.turnstile_token) return fail(400);
     stage = 'turnstile-request';
     const verification = await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(5000),
+      method: 'POST', redirect: 'error',
       body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: data.turnstile_token, remoteip: ip }),
     });
     if (!verification.ok) return fail(503, 'TURNSTILE_UNAVAILABLE');
