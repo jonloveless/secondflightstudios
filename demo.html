@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HVAC Intake Demo | Second Flight Studios</title>
+  <meta name="description" content="Try Second Flight Studios' customer-intake and lead-routing demonstration for service businesses.">
+  <link rel="canonical" href="https://secondflightstudios.com/demo.html">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    [hidden]{display:none!important}
+    :root{--ink:#17212d;--muted:#697583;--blue:#375a78;--blue-dark:#263e55;--surface:#f5f6f7;--line:#e5e8eb;--white:#fff;--max:1240px}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--surface);font-family:"DM Sans",Arial,sans-serif;-webkit-font-smoothing:antialiased}a{color:inherit;text-decoration:none}.container{width:min(100% - 80px,var(--max));margin:auto}.site-header{background:#fff;border-bottom:1px solid var(--line)}.header-inner{min-height:90px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:15px}.brand-mark{font-size:27px;font-weight:800;letter-spacing:-2px}.brand-dot{color:#688aa5}.brand-name{font-size:10px;font-weight:700;letter-spacing:1.8px;line-height:1.5}.site-nav{display:flex;gap:38px;align-items:center;font-size:13px;font-weight:600}.nav-contact{border-bottom:1px solid;padding-bottom:5px}.eyebrow,.section-label{display:inline-flex;align-items:center;gap:10px;color:var(--blue);font-size:10px;font-weight:700;letter-spacing:2px}.status-dot{width:6px;height:6px;border-radius:50%;background:#779bb5}h1,h2,p{margin-top:0}h1,h2{font-family:Arial,"Helvetica Neue",sans-serif}h1{margin:30px 0;font-size:clamp(48px,6vw,78px);line-height:1.08;letter-spacing:-4px}h1 em{font-style:normal;color:var(--blue)}h2{font-size:clamp(34px,4vw,48px);line-height:1.2;letter-spacing:-2px}.button{display:inline-flex;align-items:center;justify-content:center;gap:24px;padding:17px 25px;font-size:12px;font-weight:700}.button-primary{border:0;background:var(--ink);color:#fff;cursor:pointer}.button-text{border:0;background:transparent;padding-inline:0;cursor:pointer}.section-number{color:#a3b0bb}.demo-intro{padding:105px 0 80px;background:linear-gradient(135deg,#eef3f6,#f7f5ef 65%,#e7eef2);border-bottom:1px solid var(--line)}.demo-intro-grid{display:grid;grid-template-columns:1.3fr .9fr;gap:80px;align-items:end}.demo-intro h1{margin-bottom:0}.demo-intro-copy{color:var(--muted);line-height:1.75}.demo-intro-copy .large-copy{color:var(--ink);font-size:18px}.demo-section{padding:90px 0 120px}.demo-layout{display:grid;grid-template-columns:minmax(220px,.62fr) minmax(0,1.4fr);gap:70px;align-items:start}.demo-steps{position:sticky;top:40px}.demo-steps ol{list-style:none;padding:0;margin:38px 0 0;counter-reset:steps}.demo-steps li{position:relative;padding:0 0 30px 42px;counter-increment:steps;border-left:1px solid #cdd5dc}.demo-steps li:last-child{border-left-color:transparent}.demo-steps li:before{content:counter(steps);position:absolute;left:-14px;top:-4px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#fff;background:var(--blue-dark);font-size:11px;font-weight:700}.demo-steps strong,.demo-steps span{display:block}.demo-steps strong{margin-bottom:7px;font-size:14px}.demo-steps span{color:var(--muted);font-size:12px;line-height:1.65}.intake-card{padding:clamp(28px,5vw,58px);background:#fff;border:1px solid var(--line);box-shadow:0 24px 70px rgba(23,33,45,.07)}.intake-card-heading{margin-bottom:38px}.intake-card-heading h2{margin:12px 0}.intake-card-heading p{color:var(--muted);font-size:13px}.intake-form{display:grid;gap:24px}.field-grid{display:grid;gap:20px}.field-grid-two{grid-template-columns:repeat(2,minmax(0,1fr))}.intake-form label,.sms-choice legend{font-size:13px;font-weight:700}.intake-form input[type=text],.intake-form input[type=tel],.intake-form input[type=email],.intake-form textarea{display:block;width:100%;margin-top:8px;padding:14px 15px;color:var(--ink);background:#fbfcfc;border:1px solid #cbd2d8;font:inherit}.intake-form textarea{resize:vertical;min-height:145px}.intake-form input:focus,.intake-form textarea:focus{outline:3px solid rgba(55,90,120,.18);border-color:var(--blue)}.intake-form.was-validated :invalid{border-color:#a33b3b}.field-help{display:block;margin-top:8px;color:var(--muted);font-size:11px;font-weight:400;line-height:1.55}.sms-choice{margin:4px 0 0;padding:22px;background:#f4f7f9;border:1px solid #d6dfe5}.sms-choice legend{padding:0 8px}.consent-row{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;font-weight:400!important;line-height:1.6}.consent-row input{width:20px;height:20px;margin:2px 0}.consent-links{margin:13px 0 0 32px;font-size:11px}.consent-links a{text-decoration:underline}.form-actions{display:flex;align-items:center;gap:22px}.form-actions p{margin:0;color:var(--muted);font-size:11px}.form-error{padding:13px 15px;color:#7b2424;background:#fff0f0;border-left:3px solid #a33b3b;font-size:13px}.honeypot{position:absolute;left:-10000px}.demo-success{display:grid;grid-template-columns:auto 1fr;gap:25px;padding:30px;background:#edf4ef;border:1px solid #c6d8ca}.demo-success[hidden]{display:none}.success-icon{display:grid;place-items:center;width:44px;height:44px;color:#fff;background:#416c50;border-radius:50%;font-weight:700}.demo-success h2{margin:10px 0 14px}.demo-success p{color:#4f6255;line-height:1.7}.site-footer{background:#17212d;color:#fff;padding:50px 0 25px}.footer-inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}.footer-brand p{color:#9aa8b5;font-size:12px;line-height:1.8;margin-top:15px}.footer-links{display:flex;gap:30px;font-size:12px;color:#b7c2cc}
+    @media(max-width:900px){.container{width:min(100% - 48px,var(--max))}.demo-intro-grid,.demo-layout{grid-template-columns:1fr;gap:45px}.demo-steps{position:static}}
+    @media(max-width:600px){.container{width:min(100% - 36px,var(--max))}.header-inner{min-height:74px}.brand-mark{font-size:24px}.brand-name{font-size:8px}.site-nav{gap:16px;font-size:11px}.site-nav a:not(.nav-contact){display:none}.demo-intro{padding:68px 0 54px}.demo-intro h1{font-size:48px;letter-spacing:-3px}.demo-section{padding:50px 0 80px}.field-grid-two{grid-template-columns:1fr}.intake-card{padding:26px 20px}.form-actions{align-items:flex-start;flex-direction:column}.demo-success{grid-template-columns:1fr}.footer-inner{flex-direction:column}.footer-links{flex-wrap:wrap}}
+  </style>
+</head>
+<body class="demo-body">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Second Flight Studios home">
+        <span class="brand-mark">SFS<span class="brand-dot">.</span></span>
+        <span class="brand-name">SECOND FLIGHT<br>STUDIOS</span>
+      </a>
+      <nav class="site-nav" aria-label="Demo navigation">
+        <a href="index.html">Studio</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html" class="nav-contact">SMS terms <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="demo-main">
+    <section class="demo-intro">
+      <div class="container demo-intro-grid">
+        <div>
+          <span class="eyebrow"><span class="status-dot"></span> INTERACTIVE DEMO · NO DATA SENT</span>
+          <h1>Help starts with<br><em>one clear request.</em></h1>
+        </div>
+        <div class="demo-intro-copy">
+          <p class="large-copy">This customer-facing HVAC intake demonstrates how a service request can be captured, summarized, prioritized, and routed for staff follow-up.</p>
+          <p>Built by Second Flight Studios. This preview does not book or confirm appointments, and it does not currently transmit your information.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-section" aria-labelledby="request-title">
+      <div class="container demo-layout">
+        <aside class="demo-steps" aria-label="What happens next">
+          <span class="section-label"><span class="section-number">01 /</span> YOUR REQUEST</span>
+          <ol>
+            <li><strong>Tell us what’s happening.</strong><span>Share the equipment, symptoms, and anything urgent.</span></li>
+            <li><strong>The request is organized.</strong><span>The workflow prepares a concise summary and routes it to the right team.</span></li>
+            <li><strong>A person follows up.</strong><span>Any requested appointment time remains unconfirmed until the service provider responds.</span></li>
+          </ol>
+        </aside>
+
+        <div class="intake-card">
+          <div class="intake-card-heading">
+            <span class="eyebrow">HVAC SERVICE INTAKE</span>
+            <h2 id="request-title">What can we help with?</h2>
+            <p>Fields marked * are required.</p>
+          </div>
+
+          <noscript><p>This preview requires JavaScript. No information can be submitted.</p></noscript>
+          <form id="intake-form" class="intake-form" novalidate>
+            <input type="hidden" name="source" value="sfs_hvac_demo">
+            <input type="hidden" name="consent_version" value="sms-v1-2026-09-12">
+            <input type="hidden" id="consent-timestamp" name="consent_timestamp" value="">
+            <div class="honeypot" aria-hidden="true">
+              <label for="company-site">Company website</label>
+              <input id="company-site" name="company_site" type="text" tabindex="-1" autocomplete="off">
+            </div>
+
+            <div class="field-grid field-grid-two">
+              <label for="name">Name *
+                <input id="name" name="name" type="text" autocomplete="name" required>
+              </label>
+              <label for="phone">Mobile phone *
+                <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(802) 555-0147" required>
+              </label>
+            </div>
+
+            <div class="field-grid field-grid-two">
+              <label for="email">Email
+                <input id="email" name="email" type="email" autocomplete="email">
+              </label>
+              <label for="zip">Service ZIP code *
+                <input id="zip" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" pattern="[0-9]{5}(-[0-9]{4})?" required>
+              </label>
+            </div>
+
+            <label for="address">Service address
+              <input id="address" name="address" type="text" autocomplete="street-address">
+            </label>
+
+            <label for="message">What’s happening? *
+              <textarea id="message" name="message" rows="6" placeholder="Example: The heat pump is running, but the house is not getting warm. The outdoor unit is making a clicking sound." required></textarea>
+            </label>
+
+            <label for="preferred-time">Preferred day or time
+              <input id="preferred-time" name="preferred_time" type="text" placeholder="Example: Tuesday afternoon">
+              <span class="field-help">This is a preference only. Availability and appointments must be confirmed by the service provider.</span>
+            </label>
+
+            <fieldset class="sms-choice">
+              <legend>Optional text updates</legend>
+              <label class="consent-row" for="sms-consent">
+                <input id="sms-consent" name="sms_consent" type="checkbox" value="yes">
+                <span>I agree to receive conversational text messages from Second Flight Studios about this service request, including follow-up questions, scheduling coordination, and service updates. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is optional and is not a condition of purchase.</span>
+              </label>
+              <p class="consent-links"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">SMS Terms &amp; Conditions</a></p>
+            </fieldset>
+
+            <div class="form-actions">
+              <button class="button button-primary" type="submit" disabled>Preview service request <span aria-hidden="true">→</span></button>
+              <p><strong>Demo mode:</strong> nothing is transmitted from this page.</p>
+            </div>
+            <div id="form-error" class="form-error" role="alert" hidden>Please complete the required fields and check any highlighted entries.</div>
+          </form>
+
+          <section id="demo-success" class="demo-success" aria-live="polite" tabindex="-1" hidden>
+            <span class="success-icon" aria-hidden="true">✓</span>
+            <div>
+              <p class="eyebrow">PREVIEW COMPLETE</p>
+              <h2>Your request is ready.</h2>
+              <p id="success-summary"></p>
+              <p>A production version would now send the request into the intake workflow for triage and staff follow-up. No appointment has been scheduled or confirmed.</p>
+              <button id="reset-demo" class="button button-text" type="button">Try another request <span aria-hidden="true">↗</span></button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer demo-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark">SFS<span class="brand-dot">.</span></span>
+        <p>Second Flight Studios<br>Creative &amp; digital solutions.</p>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="sms-consent.html">SMS Updates</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (()=>{const form=document.querySelector('#intake-form'),success=document.querySelector('#demo-success'),error=document.querySelector('#form-error'),summary=document.querySelector('#success-summary'),reset=document.querySelector('#reset-demo'),timestamp=document.querySelector('#consent-timestamp'),honeypot=document.querySelector('#company-site');if(!form||!success)return;form.querySelector('[type=submit]').disabled=false;form.addEventListener('submit',event=>{event.preventDefault();error.hidden=true;if(honeypot.value)return;if(!form.checkValidity()){form.classList.add('was-validated');error.hidden=false;form.querySelector(':invalid')?.focus();return}timestamp.value=new Date().toISOString();const data=new FormData(form),smsChoice=data.get('sms_consent')==='yes'?'You requested optional SMS follow-up.':'You did not request SMS follow-up.';summary.textContent=`Thanks, ${data.get('name')}. ${smsChoice}`;form.hidden=true;success.hidden=false;success.focus()});reset.addEventListener('click',()=>{form.reset();timestamp.value='';form.classList.remove('was-validated');success.hidden=true;form.hidden=false;form.querySelector('#name')?.focus()})})();
+  </script>
+</body>
+</html>
