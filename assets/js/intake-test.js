@@ -14,7 +14,7 @@
   input.addEventListener('input', refresh);
   window.addEventListener('pagehide', () => { input.value = ''; challengeToken = ''; });
   window.sfsTurnstileReady = () => {
-    widgetId = window.turnstile.render('#turnstile', {
+    widgetId = window.turnstile.render('#turnstile-container', {
       sitekey: '0x4AAAAAAEx2JqLT8A6b7dNC', action: 'hvac_intake_test',
       callback: token => { challengeToken = token; result.textContent = 'Verification complete. Enter your private test token to continue.'; refresh(); },
       'expired-callback': () => { challengeToken = ''; result.textContent = 'Verification expired. Complete it again.'; refresh(); },
