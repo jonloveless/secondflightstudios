@@ -46,7 +46,8 @@
         result.textContent = 'Test passed. The request was validated. No lead or notification was sent, and no appointment was confirmed.';
       } else {
         const guidance = { 400: 'Sample or verification token was rejected.', 403: 'Check the private test token, preview origin, and Turnstile configuration.', 429: 'Wait one minute before trying again.', 503: 'Preview configuration is incomplete or verification is unavailable. Confirm the saved secrets and redeployment.' };
-        result.textContent = `Test not completed (HTTP ${response.status}). ${guidance[response.status] ?? 'Check the preview deployment.'}`;
+        const code = typeof body.code === 'string' ? ` Code: ${body.code}.` : '';
+        result.textContent = `Test not completed (HTTP ${response.status}).${code} ${guidance[response.status] ?? 'Check the preview deployment.'}`;
       }
     } catch {
       result.textContent = 'The test could not be completed. Check your connection and the preview deployment.';
