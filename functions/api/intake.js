@@ -84,6 +84,7 @@ function testThrottle(ip) {
 
 export async function handle(request, env, dependencies = {}) {
   const fetcher = dependencies.fetch ?? fetch;
+  let stage = 'start';
   try {
     if (request.method !== 'POST') return fail(405);
     // Never enabled by a client field. Missing or production configuration fails closed.
@@ -102,18 +103,21 @@ export async function handle(request, env, dependencies = {}) {
     try { data = await boundedJson(request); payload = validate(data, origin); }
     catch { return fail(400); }
     if (!data.turnstile_token) return fail(400);
+    stage = 'turnstile-request';
     const verification = await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(5000),
       body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: data.turnstile_token, remoteip: ip }),
     });
     if (!verification.ok) return fail(503, 'TURNSTILE_UNAVAILABLE');
+    stage = 'turnstile-response';
     const result = await verification.json();
     if (result.success !== true || result.hostname !== url.hostname || result.action !== 'hvac_intake_test') return fail(403);
     // Validate the intended downstream contract without transmitting or retaining it.
+    stage = 'final-check';
     if (!payload.phone || !payload.consent.recorded_at) return fail(400);
     return reply(200, { ok: true, mode: 'dry-run', forwarded: false,
       message: 'Test validated. Nothing was sent. No appointment is confirmed.' });
-  } catch { return fail(503, 'PREVIEW_RUNTIME'); }
+  } catch { return fail(503, `PREVIEW_RUNTIME_${stage}`); }
 }
 
 export const onRequest = ({ request, env }) => handle(request, env);
