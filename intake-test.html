@@ -15,7 +15,7 @@
   <main>
     <p class="eyebrow">OPERATOR TEST · SYNTHETIC DETAILS ONLY</p>
     <h1>Check the secure intake.</h1>
-    <p>This test validates a sample request on Cloudflare. It sends no lead to Make, sends no notifications, and books no appointment.</p>
+    <p>The dry-run validates on Cloudflare only. The forwarding test sends the fixed synthetic sample below to the isolated Make receiver. Neither test sends customer notifications or books an appointment.</p>
     <section aria-labelledby="sample-title">
       <h2 id="sample-title">Sample request</h2>
       <dl><dt>Name</dt><dd>Demo Customer</dd><dt>Phone</dt><dd>(802) 555-0147</dd><dt>ZIP</dt><dd>05401</dd><dt>Issue</dt><dd>Test only: heat pump is not warming the house.</dd><dt>SMS consent</dt><dd>No — synthetic test</dd></dl>
@@ -27,6 +27,7 @@
       <input id="test-token" type="password" autocomplete="off" spellcheck="false" minlength="32" maxlength="256">
       <div id="turnstile-container"></div>
       <button id="run-test" type="button" disabled>Run dry-run test</button>
+      <button id="forward-test" type="button" disabled>Send synthetic sample to Make</button>
       <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
       <noscript><p>JavaScript is required for this controlled test.</p></noscript>
     </section>
