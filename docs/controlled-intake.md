@@ -26,6 +26,12 @@ Make scenario 6262425 routes explicit storage tests to on-demand scenario 626910
 
 stored/sent confirms both operations. duplicate/not_repeated confirms a previously stored ID without a repeat alert; it does not establish the original alert's delivery status. Notification failures preserve the stored row and return uncertainty. Check Make and the Sheet before manually retrying an alert. A storage-unconfirmed result does not prove no row was written.
 
+## Durable submitted-details preview
+
+The separate capture operation (X-SFS-Test: capture) saves validated operator-entered synthetic details to D1 via INTAKE_PREVIEW_DB. Apply migrations/0001_preview_leads.sql to the isolated preview database. Its SQL primary key on business_id/request_id prevents duplicate rows; a hash of normalized content rejects reuse of the same ID with changed details. Server-generated timestamps from the original record are preserved on repeats. SMS consent must be false; no Make call or staff notification occurs in this operation.
+
+The database binding is Preview-only. The page keeps the capture request ID in memory, so keep it open through save, repeat, and conflict tests. This validates durable capture, not notification retry recovery or a production data pipeline. The SQLite adapter tests exercise the schema locally; deployed D1 behavior requires a live authenticated test.
+
 ## Verification and remaining work
 
 Run node --test tests/*.test.mjs. External services are mocked in local tests. Tests cover dry-run gates, synthetic forwarding, strict acknowledgements, storage results, and stable browser retry IDs. Live browser storage verification is a separate checkpoint.
