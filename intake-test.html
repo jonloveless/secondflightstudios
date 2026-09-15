@@ -28,6 +28,9 @@
       <div id="turnstile-container"></div>
       <button id="run-test" type="button" disabled>Run dry-run test</button>
       <button id="forward-test" type="button" disabled>Send synthetic sample to Make</button>
+      <p>The storage test saves one synthetic lead and sends a staff test alert. Repeat uses the same request ID to check duplicate handling. Re-enter your private token before each test. Keep this page open until you have checked the result; reloading clears the repeat ID. No customer is contacted.</p>
+      <button id="storage-test" type="button" disabled>Save sample and alert staff</button>
+      <button id="repeat-storage-test" type="button" disabled>Repeat same storage request</button>
       <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
       <noscript><p>JavaScript is required for this controlled test.</p></noscript>
     </section>
@@ -35,3 +38,4 @@
   </main>
 </body>
 </html>
+
