@@ -11,11 +11,13 @@
   let captureId = '';
   const captureAlertButton = document.querySelector('#capture-alert-test');
   const repeatCaptureAlertButton = document.querySelector('#repeat-capture-alert-test');
+  const reviewAlertsButton = document.querySelector('#review-alerts');
+  const reconciliationList = document.querySelector('#reconciliation-list');
   let captureAlertId = '';
   const input = document.querySelector('#test-token');
   const result = document.querySelector('#test-result');
   let challengeToken = '', widgetId, busy = false, hasResult = false;
-  const refresh = () => { button.disabled = busy || !challengeToken || input.value.length < 32; forwardButton.disabled = button.disabled; if (storageButton) storageButton.disabled = button.disabled; if (repeatButton) repeatButton.disabled = button.disabled || !storageId; if (captureButton) captureButton.disabled = button.disabled; if (repeatCaptureButton) repeatCaptureButton.disabled = button.disabled || !captureId; if (captureAlertButton) captureAlertButton.disabled = button.disabled; if (repeatCaptureAlertButton) repeatCaptureAlertButton.disabled = button.disabled || !captureAlertId; };
+  const refresh = () => { button.disabled = busy || !challengeToken || input.value.length < 32; forwardButton.disabled = button.disabled; if (storageButton) storageButton.disabled = button.disabled; if (repeatButton) repeatButton.disabled = button.disabled || !storageId; if (captureButton) captureButton.disabled = button.disabled; if (repeatCaptureButton) repeatCaptureButton.disabled = button.disabled || !captureId; if (captureAlertButton) captureAlertButton.disabled = button.disabled; if (repeatCaptureAlertButton) repeatCaptureAlertButton.disabled = button.disabled || !captureAlertId; if (reviewAlertsButton) reviewAlertsButton.disabled = button.disabled; };
   if (location.origin !== expectedOrigin) {
     input.disabled = true;
     result.textContent = 'This test is available only on the approved secure-intake branch preview.';
@@ -36,7 +38,23 @@
   script.async = true;
   script.onerror = () => { result.textContent = 'Verification could not load. Refresh this page and try again.'; };
   document.head.append(script);
-  const run = async (forward = false, storage = false, repeat = false, capture = false, captureAlert = false) => {
+  const renderReconciliation = items => {
+    if (!reconciliationList) return;
+    reconciliationList.replaceChildren();
+    if (!items.length) {
+      const empty = document.createElement('p'); empty.className = 'reconciliation-empty';
+      empty.textContent = 'No pending or unconfirmed staff alerts.'; reconciliationList.append(empty); return;
+    }
+    for (const item of items) {
+      const card = document.createElement('article'); card.className = 'reconciliation-item';
+      const title = document.createElement('h3'); title.textContent = item.status === 'pending' ? 'Pending staff alert' : 'Unconfirmed staff alert'; card.append(title);
+      for (const [label, value] of [['Request ID', item.request_id], ['Test lead', item.lead.name], ['ZIP', item.lead.zip], ['Issue', item.lead.message], ['First attempt', item.first_attempt_at], ['Error code', item.last_error_code || 'None recorded']]) {
+        const line = document.createElement('p'); line.textContent = label + ': ' + value; card.append(line);
+      }
+      reconciliationList.append(card);
+    }
+  };
+  const run = async (forward = false, storage = false, repeat = false, capture = false, captureAlert = false, reconcile = false) => {
     if (button.disabled || (repeat && !(captureAlert ? captureAlertId : capture ? captureId : storageId))) return;
     if (storage && !repeat) storageId = crypto.randomUUID();
     if (capture && !repeat) captureId = crypto.randomUUID();
@@ -49,14 +67,17 @@
       const response = await fetch('/api/intake', {
         method: 'POST', credentials: 'omit', cache: 'no-store', redirect: 'error',
         signal: AbortSignal.timeout(25000),
-        headers: { 'Content-Type': 'application/json', Authorization: authorization, ...(captureAlert ? { 'X-SFS-Test': 'capture-alert', 'X-SFS-Request-ID': captureAlertId } : capture ? { 'X-SFS-Test': 'capture', 'X-SFS-Request-ID': captureId } : storage ? { 'X-SFS-Test': 'storage', 'X-SFS-Request-ID': storageId } : forward ? { 'X-SFS-Test': 'forward' } : {}) },
+        headers: { 'Content-Type': 'application/json', Authorization: authorization, ...(reconcile ? { 'X-SFS-Test': 'reconcile' } : captureAlert ? { 'X-SFS-Test': 'capture-alert', 'X-SFS-Request-ID': captureAlertId } : capture ? { 'X-SFS-Test': 'capture', 'X-SFS-Request-ID': captureId } : storage ? { 'X-SFS-Test': 'storage', 'X-SFS-Request-ID': storageId } : forward ? { 'X-SFS-Test': 'forward' } : {}) },
         body: JSON.stringify({ name: 'Demo Customer', phone: '(802) 555-0147', zip: '05401',
           message: 'Test only: heat pump is not warming the house.', sms_consent: false,
           consent_version: 'sms-v1-2026-09-12', turnstile_token: challengeToken,
           ...((capture || captureAlert) ? Object.fromEntries(['name','phone','email','zip','address','message','preferred_time'].map(key => [key, document.querySelector('#capture-' + key).value])) : {}) }),
       });
       const body = await response.json();
-      if (captureAlert && response.ok && body.ok === true && body.mode === 'capture-alert-test' && body.stored === true && body.notification_status === 'sent') {
+      if (reconcile && response.ok && body.ok === true && body.mode === 'notification-reconciliation' && Array.isArray(body.items)) {
+        renderReconciliation(body.items);
+        result.textContent = body.count ? body.count + ' unresolved staff alert' + (body.count === 1 ? '' : 's') + ' loaded. Inspect the matching request in Make before taking action.' : 'Reconciliation queue is clear.';
+      } else if (captureAlert && response.ok && body.ok === true && body.mode === 'capture-alert-test' && body.stored === true && body.notification_status === 'sent') {
         result.textContent = (body.storage_status === 'duplicate' ? 'Already stored. The staff test alert was not repeated. ' : 'New preview lead saved in D1 and the staff test alert was sent. ') + 'Request ID: ' + body.request_id;
       } else if (capture && response.ok && body.ok === true && body.mode === 'capture-test' && body.stored === true) {
         result.textContent = (body.storage_status === 'duplicate' ? 'This request is already saved. ' : 'Submitted test details saved in the preview database. ') + 'No staff alert was requested. Request ID: ' + body.request_id;
@@ -95,5 +116,6 @@
   repeatCaptureButton?.addEventListener('click', () => run(false, false, true, true));
   captureAlertButton?.addEventListener('click', () => run(false, false, false, false, true));
   repeatCaptureAlertButton?.addEventListener('click', () => run(false, false, true, false, true));
+  reviewAlertsButton?.addEventListener('click', () => run(false, false, false, false, false, true));
 })();
 
