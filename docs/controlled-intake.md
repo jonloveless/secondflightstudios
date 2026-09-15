@@ -32,11 +32,13 @@ The separate capture operation (X-SFS-Test: capture) saves validated operator-en
 
 The D1-gated alert operation (`X-SFS-Test: capture-alert`) uses a separate request ID. It first saves the normalized lead, then atomically claims one notification attempt in `preview_notification_state` from migration `0002_preview_notification_state.sql`. Only the request that creates that claim may call the isolated Make receiver. Make scenario 6286358 sends the authorized Telegram staff-test alert and returns an exact acknowledgement. Cloudflare records `sent` or `unconfirmed` in D1. A duplicate returns the stored outcome without another alert; pending or unconfirmed outcomes require Make inspection and are never resent automatically.
 
+The operator reconciliation view sends `X-SFS-Test: reconcile` through the same origin, private-token, Turnstile, and preview-database gates. It lists at most 25 oldest `pending` or `unconfirmed` alerts and exposes only request ID, state, timestamps, error code, and the synthetic name/ZIP/issue needed for investigation. Loading the queue cannot call Make or Telegram and cannot change D1. Operators must inspect the matching request in Make before any later resolution action is designed.
+
 The database binding is Preview-only. The page keeps capture and alert request IDs in memory, so keep it open through save, repeat, and conflict tests. The SQLite adapter tests exercise the schema, atomic claim, and uncertainty hold locally; deployed D1 behavior still requires a live authenticated alert test.
 
 ## Verification and remaining work
 
 Run node --test tests/*.test.mjs. External services are mocked in local tests. Tests cover dry-run gates, synthetic forwarding, strict acknowledgements, storage results, stable browser retry IDs, durable D1 capture, atomic alert claims, and no automatic resend after uncertainty. Live browser alert verification is a separate checkpoint.
 
-Before production: distributed rate limiting, an operator reconciliation view for uncertain alerts, complete lead/consent mapping, production destination configuration, and end-to-end acceptance tests are required. The current isolate-local throttle and older bounded Sheet lookup are only suitable for controlled tests. Siteverify currently has no explicit timeout. No appointment or customer message is authorized by these tests.
+Before production: a controlled resolution workflow for reconciled alerts, distributed rate limiting, complete lead/consent mapping, production destination configuration, and end-to-end acceptance tests are required. The current isolate-local throttle and older bounded Sheet lookup are only suitable for controlled tests. Siteverify currently has no explicit timeout. No appointment or customer message is authorized by these tests.
 
