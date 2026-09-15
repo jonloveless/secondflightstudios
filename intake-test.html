@@ -41,13 +41,17 @@
       <label for="capture-message">Test issue</label><input id="capture-message" value="Test only: heat pump is not warming the house." maxlength="2000">
       <label for="capture-preferred_time">Test preferred time (optional)</label><input id="capture-preferred_time" value="Tomorrow afternoon" maxlength="160">
       <p>SMS consent is false for these synthetic tests.</p>
-      <button id="capture-test" type="button" disabled>Save details to preview database</button>
-      <button id="repeat-capture-test" type="button" disabled>Repeat same database request</button>
-      <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
+        <button id="capture-test" type="button" disabled>Save details to preview database</button>
+        <button id="repeat-capture-test" type="button" disabled>Repeat same database request</button>
+        <p class="test-guidance">The D1-gated alert test creates a separate request. Only a newly claimed notification may reach the isolated staff-test bot. Repeating checks the saved outcome and never sends another alert automatically.</p>
+        <button id="capture-alert-test" type="button" disabled>Save new lead and alert test staff</button>
+        <button id="repeat-capture-alert-test" type="button" disabled>Check same alert request</button>
+        <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
       <noscript><p>JavaScript is required for this controlled test.</p></noscript>
     </section>
     <p class="footnote">The public demo remains separate. This page does not store tokens or test details in browser storage.</p>
   </main>
 </body>
 </html>
+
 

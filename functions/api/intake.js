@@ -103,6 +103,45 @@ export async function savePreviewLead(database, requestId, payload) {
   return existing.payload_hash === hash ? { status: 'duplicate', stored: true } : { status: 'conflict', stored: false };
 }
 
+export async function claimPreviewNotification(database, businessId, requestId, attemptedAt) {
+  const db = database.withSession ? database.withSession('first-primary') : database;
+  const inserted = await db.prepare(`INSERT INTO preview_notification_state
+    (business_id, request_id, status, attempt_count, first_attempt_at, last_attempt_at)
+    VALUES (?, ?, 'pending', 1, ?, ?) ON CONFLICT (business_id, request_id) DO NOTHING
+    RETURNING status`).bind(businessId, requestId, attemptedAt, attemptedAt).first();
+  if (inserted) return { claimed: true, status: 'pending' };
+  const existing = await db.prepare(`SELECT status, attempt_count, message_ref, last_error_code
+    FROM preview_notification_state WHERE business_id = ? AND request_id = ?`)
+    .bind(businessId, requestId).first();
+  if (!existing) throw new Error('notification claim unconfirmed');
+  return { claimed: false, ...existing };
+}
+
+export async function finishPreviewNotification(database, businessId, requestId, status, messageRef = '', errorCode = '') {
+  if (!['sent', 'unconfirmed'].includes(status)) throw new Error('invalid notification status');
+  const db = database.withSession ? database.withSession('first-primary') : database;
+  const updated = await db.prepare(`UPDATE preview_notification_state
+    SET status = ?, message_ref = ?, last_error_code = ?
+    WHERE business_id = ? AND request_id = ? AND status = 'pending'
+    RETURNING status, attempt_count, message_ref, last_error_code`)
+    .bind(status, String(messageRef), errorCode, businessId, requestId).first();
+  if (updated) return updated;
+  const existing = await db.prepare(`SELECT status, attempt_count, message_ref, last_error_code
+    FROM preview_notification_state WHERE business_id = ? AND request_id = ?`)
+    .bind(businessId, requestId).first();
+  if (!existing || existing.status !== status) throw new Error('notification update unconfirmed');
+  return existing;
+}
+
+function makeTarget(env) {
+  let target;
+  try { target = new URL(env.MAKE_TEST_WEBHOOK_URL); } catch { throw new Error('configuration'); }
+  if (target.protocol !== 'https:' || target.hostname !== 'hook.us2.make.com' ||
+      target.port || target.username || target.password || target.search || target.hash ||
+      !/^[/][a-z0-9]{32}$/.test(target.pathname) || !env.MAKE_TEST_API_KEY) throw new Error('configuration');
+  return target;
+}
+
 export async function handle(request, env, dependencies = {}) {
   const fetcher = dependencies.fetch ?? fetch;
   let stage = 'start';
@@ -113,8 +152,9 @@ export async function handle(request, env, dependencies = {}) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (!origin || origin !== env.INTAKE_TEST_ORIGIN || origin !== url.origin || url.search) return fail(403);
-    if (![null, 'forward', 'storage', 'capture'].includes(request.headers.get('X-SFS-Test'))) return fail(400);
-    const capture = request.headers.get('X-SFS-Test') === 'capture';
+    if (![null, 'forward', 'storage', 'capture', 'capture-alert'].includes(request.headers.get('X-SFS-Test'))) return fail(400);
+    const captureAlert = request.headers.get('X-SFS-Test') === 'capture-alert';
+    const capture = request.headers.get('X-SFS-Test') === 'capture' || captureAlert;
     const storage = request.headers.get('X-SFS-Test') === 'storage';
     const forward = storage || request.headers.get('X-SFS-Test') === 'forward';
     const storageId = request.headers.get('X-SFS-Request-ID');
@@ -154,16 +194,48 @@ export async function handle(request, env, dependencies = {}) {
       try {
         const saved = await savePreviewLead(env.INTAKE_PREVIEW_DB, storageId, payload);
         if (saved.status === 'conflict') return reply(409, { ok: false, code: 'REQUEST_ID_CONFLICT', request_id: storageId });
-        return reply(200, { ok: true, mode: 'capture-test', request_id: storageId,
+        if (!captureAlert) return reply(200, { ok: true, mode: 'capture-test', request_id: storageId,
           stored: true, storage_status: saved.status, notification_status: 'not_requested' });
+        let claim;
+        try { claim = await claimPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, payload.consent.recorded_at); }
+        catch { return reply(503, { ok: false, code: 'NOTIFICATION_CLAIM_UNCONFIRMED', request_id: storageId }); }
+        if (!claim.claimed) {
+          if (claim.status === 'sent') return reply(200, { ok: true, mode: 'capture-alert-test', request_id: storageId,
+            stored: true, storage_status: saved.status, notification_status: 'sent', notification_repeated: false });
+          return reply(202, { ok: false, code: 'NOTIFICATION_RECONCILIATION_REQUIRED', request_id: storageId,
+            stored: true, storage_status: saved.status, notification_status: claim.status });
+        }
+        let target;
+        try { target = makeTarget(env); }
+        catch { await finishPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, 'unconfirmed', '', 'MAKE_TEST_CONFIGURATION').catch(() => {});
+          return reply(503, { ok: false, code: 'MAKE_TEST_CONFIGURATION', request_id: storageId }); }
+        const outbound = { schema_version: 'hvac-lead.v1', request_id: storageId,
+          received_at: payload.consent.recorded_at, environment: 'test', ...payload,
+          source: 'sfs_hvac_d1_notification_test' };
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        try {
+          const delivery = await fetcher(target.href, { method: 'POST', redirect: 'manual', signal: controller.signal,
+            headers: { 'Content-Type': 'application/json', 'x-make-apikey': env.MAKE_TEST_API_KEY }, body: JSON.stringify(outbound) });
+          if (delivery.status !== 200) throw new Error('MAKE_TEST_REJECTED');
+          const ack = await boundedJson(delivery);
+          if (ack.status !== 'staff_alert_test_result' || ack.request_id !== storageId || ack.appointment_confirmed !== false ||
+              !['sent', 'unconfirmed'].includes(ack.notification_status)) throw new Error('MAKE_TEST_UNCONFIRMED');
+          if (ack.notification_status !== 'sent') throw new Error('STAFF_DELIVERY_UNCONFIRMED');
+          try { await finishPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, 'sent', ack.message_ref ?? ''); }
+          catch { return reply(503, { ok: false, code: 'NOTIFICATION_LOG_UNCONFIRMED', request_id: storageId }); }
+          return reply(200, { ok: true, mode: 'capture-alert-test', request_id: storageId,
+            stored: true, storage_status: saved.status, notification_status: 'sent', notification_repeated: false });
+        } catch (error) {
+          const code = ['MAKE_TEST_REJECTED', 'STAFF_DELIVERY_UNCONFIRMED'].includes(error.message) ? error.message : 'MAKE_TEST_UNCONFIRMED';
+          await finishPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, 'unconfirmed', '', code).catch(() => {});
+          return reply(502, { ok: false, code, request_id: storageId, stored: true, notification_status: 'unconfirmed' });
+        } finally { clearTimeout(timer); }
       } catch { return reply(503, { ok: false, code: 'CAPTURE_UNCONFIRMED', request_id: storageId }); }
     }
     if (forward) {
       let target;
-      try { target = new URL(env.MAKE_TEST_WEBHOOK_URL); } catch { return fail(503, 'MAKE_TEST_CONFIGURATION'); }
-      if (target.protocol !== 'https:' || target.hostname !== 'hook.us2.make.com' ||
-          target.port || target.username || target.password || target.search || target.hash ||
-          !/^[/][a-z0-9]{32}$/.test(target.pathname) || !env.MAKE_TEST_API_KEY) return fail(503, 'MAKE_TEST_CONFIGURATION');
+      try { target = makeTarget(env); } catch { return fail(503, 'MAKE_TEST_CONFIGURATION'); }
       const requestId = storage ? storageId : crypto.randomUUID();
       const now = new Date().toISOString();
       // No caller contact data or tokens are forwarded, even if supplied in a valid request.
@@ -201,3 +273,4 @@ export async function handle(request, env, dependencies = {}) {
 }
 
 export const onRequest = ({ request, env }) => handle(request, env);
+
