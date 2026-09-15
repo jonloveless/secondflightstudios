@@ -82,6 +82,27 @@ function testThrottle(ip) {
   attempts.set(ip, entry); return ++entry.count <= 5;
 }
 
+// Durable preview capture is intentionally separate from the fixed Make sample.
+// The unique key is enforced by SQL, not a read-then-write check in JavaScript.
+export async function savePreviewLead(database, requestId, payload) {
+  const db = database.withSession ? database.withSession('first-primary') : database;
+  const { recorded_at, ...consent } = payload.consent;
+  const stable = { ...payload, consent };
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(stable)));
+  const hash = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, '0')).join('');
+  const envelope = { schema_version: 'hvac-lead.v1', request_id: requestId,
+    received_at: recorded_at, environment: 'test', ...payload };
+  const inserted = await db.prepare(`INSERT INTO preview_leads
+    (business_id, request_id, payload_hash, received_at, payload_json)
+    VALUES (?, ?, ?, ?, ?) ON CONFLICT (business_id, request_id) DO NOTHING
+    RETURNING request_id`).bind(payload.business_id, requestId, hash, recorded_at, JSON.stringify(envelope)).first();
+  if (inserted) return { status: 'saved', stored: true };
+  const existing = await db.prepare('SELECT payload_hash FROM preview_leads WHERE business_id = ? AND request_id = ?')
+    .bind(payload.business_id, requestId).first();
+  if (!existing) throw new Error('capture unconfirmed');
+  return existing.payload_hash === hash ? { status: 'duplicate', stored: true } : { status: 'conflict', stored: false };
+}
+
 export async function handle(request, env, dependencies = {}) {
   const fetcher = dependencies.fetch ?? fetch;
   let stage = 'start';
@@ -92,12 +113,14 @@ export async function handle(request, env, dependencies = {}) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (!origin || origin !== env.INTAKE_TEST_ORIGIN || origin !== url.origin || url.search) return fail(403);
-    if (![null, 'forward', 'storage'].includes(request.headers.get('X-SFS-Test'))) return fail(400);
+    if (![null, 'forward', 'storage', 'capture'].includes(request.headers.get('X-SFS-Test'))) return fail(400);
+    const capture = request.headers.get('X-SFS-Test') === 'capture';
     const storage = request.headers.get('X-SFS-Test') === 'storage';
     const forward = storage || request.headers.get('X-SFS-Test') === 'forward';
     const storageId = request.headers.get('X-SFS-Request-ID');
-    if (storage && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(storageId ?? '')) return fail(400);
-    if (forward && origin !== 'https://feature-hvac-secure-intake.secondflightstudios.pages.dev') return fail(403);
+    if ((storage || capture) && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(storageId ?? '')) return fail(400);
+    if ((forward || capture) && origin !== 'https://feature-hvac-secure-intake.secondflightstudios.pages.dev') return fail(403);
+    if (capture && !env.INTAKE_PREVIEW_DB) return fail(503, 'CAPTURE_CONFIGURATION');
     const auth = request.headers.get('Authorization') ?? '';
     if (auth.length > 512 || !await sameSecret(auth, 'Bearer ' + env.INTAKE_TEST_TOKEN)) return fail(403);
     const ip = request.headers.get('CF-Connecting-IP');
@@ -121,6 +144,20 @@ export async function handle(request, env, dependencies = {}) {
     // Validate the intended downstream contract without transmitting or retaining it.
     stage = 'final-check';
     if (!payload.phone || !payload.consent.recorded_at) return fail(400);
+    if (capture) {
+      stage = 'durable-capture';
+      payload.source = 'sfs_hvac_capture_test';
+      payload.consent.source_page = origin + '/intake-test';
+      payload.consent.capture_context = 'synthetic_test';
+      // Operator test evidence must never be represented as customer SMS permission.
+      if (payload.consent.sms !== false) return fail(400, 'SYNTHETIC_CONSENT_REQUIRED');
+      try {
+        const saved = await savePreviewLead(env.INTAKE_PREVIEW_DB, storageId, payload);
+        if (saved.status === 'conflict') return reply(409, { ok: false, code: 'REQUEST_ID_CONFLICT', request_id: storageId });
+        return reply(200, { ok: true, mode: 'capture-test', request_id: storageId,
+          stored: true, storage_status: saved.status, notification_status: 'not_requested' });
+      } catch { return reply(503, { ok: false, code: 'CAPTURE_UNCONFIRMED', request_id: storageId }); }
+    }
     if (forward) {
       let target;
       try { target = new URL(env.MAKE_TEST_WEBHOOK_URL); } catch { return fail(503, 'MAKE_TEST_CONFIGURATION'); }
