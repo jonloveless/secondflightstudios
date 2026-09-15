@@ -22,6 +22,10 @@
     submit.disabled = true;
     const requestId = crypto.randomUUID();
     const data = Object.fromEntries(new FormData(form));
+    delete data.source;
+    delete data.intake_test_token;
+    delete data.consent_timestamp;
+    delete data.turnstile_token;
     data.sms_consent = data.sms_consent === 'yes';
     data.consent_version = 'sms-v1-2026-09-12';
     data.turnstile_token = turnstileToken;
