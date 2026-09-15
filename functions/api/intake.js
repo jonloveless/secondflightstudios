@@ -92,7 +92,11 @@ export async function handle(request, env, dependencies = {}) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (!origin || origin !== env.INTAKE_TEST_ORIGIN || origin !== url.origin || url.search) return fail(403);
-    const forward = request.headers.get('X-SFS-Test') === 'forward';
+    if (![null, 'forward', 'storage'].includes(request.headers.get('X-SFS-Test'))) return fail(400);
+    const storage = request.headers.get('X-SFS-Test') === 'storage';
+    const forward = storage || request.headers.get('X-SFS-Test') === 'forward';
+    const storageId = request.headers.get('X-SFS-Request-ID');
+    if (storage && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(storageId ?? '')) return fail(400);
     if (forward && origin !== 'https://feature-hvac-secure-intake.secondflightstudios.pages.dev') return fail(403);
     const auth = request.headers.get('Authorization') ?? '';
     if (auth.length > 512 || !await sameSecret(auth, 'Bearer ' + env.INTAKE_TEST_TOKEN)) return fail(403);
@@ -123,11 +127,11 @@ export async function handle(request, env, dependencies = {}) {
       if (target.protocol !== 'https:' || target.hostname !== 'hook.us2.make.com' ||
           target.port || target.username || target.password || target.search || target.hash ||
           !/^[/][a-z0-9]{32}$/.test(target.pathname) || !env.MAKE_TEST_API_KEY) return fail(503, 'MAKE_TEST_CONFIGURATION');
-      const requestId = crypto.randomUUID();
+      const requestId = storage ? storageId : crypto.randomUUID();
       const now = new Date().toISOString();
       // No caller contact data or tokens are forwarded, even if supplied in a valid request.
       const sample = { schema_version: 'hvac-lead.v1', request_id: requestId, received_at: now,
-        environment: 'test', business_id: 'biz_test_001', source: 'sfs_hvac_intake', record_type: 'Test',
+        environment: 'test', business_id: 'biz_test_001', source: storage ? 'sfs_hvac_storage_test' : 'sfs_hvac_intake', record_type: 'Test',
         name: 'Demo Customer', phone: '+18025550147', zip: '05401', email: '', address: '', preferred_time: '',
         message: 'Test only: heat pump is not warming the house.', appointment_confirmed: false,
         consent: { sms: false, disclosure_version: VERSION, recorded_at: now,
@@ -140,6 +144,13 @@ export async function handle(request, env, dependencies = {}) {
           body: JSON.stringify(sample) });
         if (delivery.status !== 200) return reply(502, { ok: false, code: 'MAKE_TEST_REJECTED', request_id: requestId });
         const ack = await boundedJson(delivery);
+        if (storage) {
+          const validOutcome = ack.storage_status === 'duplicate'
+            ? ack.notification_status === 'not_repeated'
+            : ack.storage_status === 'stored' && ['sent', 'unconfirmed', 'unconfirmed_log_update_failed', 'sent_log_update_failed'].includes(ack.notification_status);
+          if (ack.status !== 'storage_test_result' || ack.request_id !== requestId || ack.appointment_confirmed !== false || !validOutcome) return reply(502, { ok: false, code: 'STORAGE_UNCONFIRMED', request_id: requestId });
+          return reply(200, { ok: true, mode: 'storage-test', request_id: requestId, stored: true, storage_status: ack.storage_status, notification_status: ack.notification_status });
+        }
         if (ack.status !== 'test_received' || ack.request_id !== requestId || ack.downstream_actions !== false ||
             ack.appointment_confirmed !== false) return reply(502, { ok: false, code: 'MAKE_TEST_UNCONFIRMED', request_id: requestId });
         return reply(200, { ok: true, mode: 'forward-test', forwarded: true, request_id: requestId, downstream_actions: false });
