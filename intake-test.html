@@ -31,6 +31,18 @@
       <p>The storage test saves one synthetic lead and sends a staff test alert. Repeat uses the same request ID to check duplicate handling. Re-enter your private token before each test. Keep this page open until you have checked the result; reloading clears the repeat ID. No customer is contacted.</p>
       <button id="storage-test" type="button" disabled>Save sample and alert staff</button>
       <button id="repeat-storage-test" type="button" disabled>Repeat same storage request</button>
+      <h2>Save submitted test details</h2>
+      <p>Use invented details only. This test saves your entries in the preview database without sending a staff alert. Repeat keeps the same ID; changing details before repeating should produce a conflict. Reloading clears the repeat ID.</p>
+      <label for="capture-name">Test name</label><input id="capture-name" value="Demo Customer" maxlength="100">
+      <label for="capture-phone">Test phone</label><input id="capture-phone" value="(802) 555-0147" maxlength="32">
+      <label for="capture-email">Test email (optional)</label><input id="capture-email" value="demo@example.com" maxlength="254">
+      <label for="capture-zip">Test ZIP</label><input id="capture-zip" value="05401" maxlength="10">
+      <label for="capture-address">Test address (optional)</label><input id="capture-address" value="" maxlength="200">
+      <label for="capture-message">Test issue</label><input id="capture-message" value="Test only: heat pump is not warming the house." maxlength="2000">
+      <label for="capture-preferred_time">Test preferred time (optional)</label><input id="capture-preferred_time" value="Tomorrow afternoon" maxlength="160">
+      <p>SMS consent is false for these synthetic tests.</p>
+      <button id="capture-test" type="button" disabled>Save details to preview database</button>
+      <button id="repeat-capture-test" type="button" disabled>Repeat same database request</button>
       <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
       <noscript><p>JavaScript is required for this controlled test.</p></noscript>
     </section>
