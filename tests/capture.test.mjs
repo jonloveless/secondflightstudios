@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFile } from 'node:fs/promises';
 const source = await readFile(new URL('../functions/api/intake.js', import.meta.url), 'utf8');
-const { savePreviewLead, claimPreviewNotification, validate, handle } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+const { savePreviewLead, claimPreviewNotification, finishPreviewNotification, listPreviewNotificationReconciliation, validate, handle } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const sql = (await Promise.all([
  readFile(new URL('../migrations/0001_preview_leads.sql', import.meta.url), 'utf8'),
  readFile(new URL('../migrations/0002_preview_notification_state.sql', import.meta.url), 'utf8')
@@ -13,7 +13,10 @@ const id = 'a40dd3bb-2ed8-4b64-9117-1ace05c821a3';
 const data = {name:'Test Second Customer',phone:'8025550147',email:'demo@example.com',zip:'05401',address:'Invented test address',message:'Test: fan rattles',preferred_time:'Friday',sms_consent:false,consent_version:'sms-v1-2026-09-12',turnstile_token:'verify'};
 function database() {
  const sqlite = new DatabaseSync(':memory:'); sqlite.exec(sql);
- return {sqlite, prepare: statement => ({bind: (...values) => ({first: async () => sqlite.prepare(statement).get(...values) ?? null})})};
+ return {sqlite, prepare: statement => ({bind: (...values) => ({
+  first: async () => sqlite.prepare(statement).get(...values) ?? null,
+  all: async () => ({results: sqlite.prepare(statement).all(...values)})
+ })})};
 }
 test('SQL unique key keeps one record for concurrent same-ID attempts and preserves original details', async()=>{
  const db=database(); const payload=validate(data,origin,new Date('2026-09-15T00:00:00Z'));
@@ -71,5 +74,19 @@ test('D1-gated alert sends once, records delivery, and never auto-repeats uncert
  const failed=await handle(request(uncertainId),env,uncertain);assert.equal(failed.status,502);assert.equal(uncertainCalls,1);
  const held=await handle(request(uncertainId),env,uncertain);assert.equal(held.status,202);assert.equal(uncertainCalls,1);
  assert.equal(db.sqlite.prepare('SELECT status FROM preview_notification_state WHERE request_id=?').get(uncertainId).status,'unconfirmed');db.sqlite.close();
+});
+test('reconciliation lists only unresolved alerts without calling Make or exposing extra contact fields',async()=>{
+ const db=database();const env={INTAKE_MODE:'controlled-dry-run',INTAKE_TEST_ORIGIN:origin,INTAKE_TEST_TOKEN:'x'.repeat(32),TURNSTILE_SECRET_KEY:'secret',INTAKE_PREVIEW_DB:db};
+ const unresolvedId='c40dd3bb-2ed8-4b64-9117-1ace05c821a3', sentId='d40dd3bb-2ed8-4b64-9117-1ace05c821a3';
+ const payload=validate(data,origin,new Date('2026-09-15T00:00:00Z'));
+ await savePreviewLead(db,unresolvedId,payload);await claimPreviewNotification(db,'biz_test_001',unresolvedId,'2026-09-15T00:00:01Z');
+ await finishPreviewNotification(db,'biz_test_001',unresolvedId,'unconfirmed','','MAKE_TEST_UNCONFIRMED');
+ await savePreviewLead(db,sentId,payload);await claimPreviewNotification(db,'biz_test_001',sentId,'2026-09-15T00:00:02Z');
+ await finishPreviewNotification(db,'biz_test_001',sentId,'sent','19');
+ const direct=await listPreviewNotificationReconciliation(db);assert.equal(direct.length,1);assert.equal(direct[0].request_id,unresolvedId);assert.equal(direct[0].lead.name,data.name);assert.equal(direct[0].lead.zip,data.zip);assert.equal(direct[0].lead.message,data.message);assert.equal(direct[0].lead.phone,undefined);assert.equal(direct[0].last_error_code,'MAKE_TEST_UNCONFIRMED');
+ let calls=0;const request=new Request(origin+'/api/intake',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+env.INTAKE_TEST_TOKEN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.3','X-SFS-Test':'reconcile'},body:JSON.stringify(data)});
+ const response=await handle(request,env,{throttle:()=>true,fetch:async url=>{calls++;assert.equal(url,'https://challenges.cloudflare.com/turnstile/v0/siteverify');return Response.json({success:true,hostname:new URL(origin).hostname,action:'hvac_intake_test'});}});
+ const body=await response.json();assert.equal(response.status,200);assert.equal(body.mode,'notification-reconciliation');assert.equal(body.count,1);assert.equal(body.items[0].request_id,unresolvedId);assert.equal(calls,1);
+ db.sqlite.close();
 });
 
