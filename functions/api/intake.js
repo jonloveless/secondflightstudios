@@ -173,16 +173,17 @@ export async function handle(request, env, dependencies = {}) {
     const origin = request.headers.get('Origin');
     if (!origin || origin !== env.INTAKE_TEST_ORIGIN || origin !== url.origin || url.search) return fail(403);
     const testType = request.headers.get('X-SFS-Test');
-    if (![null, 'forward', 'storage', 'capture', 'capture-alert', 'reconcile'].includes(testType)) return fail(400);
+    if (![null, 'forward', 'storage', 'capture', 'capture-alert', 'reconcile', 'public-preview'].includes(testType)) return fail(400);
     const reconcile = testType === 'reconcile';
     const captureAlert = testType === 'capture-alert';
     const capture = testType === 'capture' || captureAlert;
+    const publicPreview = testType === 'public-preview';
     const storage = testType === 'storage';
     const forward = storage || request.headers.get('X-SFS-Test') === 'forward';
     const storageId = request.headers.get('X-SFS-Request-ID');
-    if ((storage || capture) && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(storageId ?? '')) return fail(400);
-    if ((forward || capture) && origin !== 'https://feature-hvac-secure-intake.secondflightstudios.pages.dev') return fail(403);
-    if ((capture || reconcile) && !env.INTAKE_PREVIEW_DB) return fail(503, 'CAPTURE_CONFIGURATION');
+    if ((storage || capture || publicPreview) && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(storageId ?? '')) return fail(400);
+    if ((forward || capture || publicPreview) && origin !== 'https://feature-hvac-secure-intake.secondflightstudios.pages.dev') return fail(403);
+    if ((capture || reconcile || publicPreview) && !env.INTAKE_PREVIEW_DB) return fail(503, 'CAPTURE_CONFIGURATION');
     const auth = request.headers.get('Authorization') ?? '';
     if (auth.length > 512 || !await sameSecret(auth, 'Bearer ' + env.INTAKE_TEST_TOKEN)) return fail(403);
     const ip = request.headers.get('CF-Connecting-IP');
@@ -212,6 +213,19 @@ export async function handle(request, env, dependencies = {}) {
         const items = await listPreviewNotificationReconciliation(env.INTAKE_PREVIEW_DB);
         return reply(200, { ok: true, mode: 'notification-reconciliation', count: items.length, items });
       } catch { return reply(503, { ok: false, code: 'RECONCILIATION_UNAVAILABLE' }); }
+    }
+    if (publicPreview) {
+      stage = 'public-preview-capture';
+      payload.source = 'sfs_hvac_public_preview';
+      payload.consent.source_page = origin + '/demo';
+      payload.consent.capture_context = 'public_preview_test';
+      try {
+        const saved = await savePreviewLead(env.INTAKE_PREVIEW_DB, storageId, payload);
+        if (saved.status === 'conflict') return reply(409, { ok: false, code: 'REQUEST_ID_CONFLICT', request_id: storageId });
+        return reply(200, { ok: true, mode: 'public-preview', request_id: storageId,
+          stored: true, storage_status: saved.status, notification_status: 'not_requested',
+          downstream_actions: false });
+      } catch { return reply(503, { ok: false, code: 'CAPTURE_UNCONFIRMED', request_id: storageId }); }
     }
     if (capture) {
       stage = 'durable-capture';
