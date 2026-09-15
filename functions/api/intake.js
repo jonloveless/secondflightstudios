@@ -133,6 +133,26 @@ export async function finishPreviewNotification(database, businessId, requestId,
   return existing;
 }
 
+export async function listPreviewNotificationReconciliation(database, limit = 25) {
+  const db = database.withSession ? database.withSession('first-primary') : database;
+  const boundedLimit = Math.max(1, Math.min(Number(limit) || 25, 50));
+  const response = await db.prepare(`SELECT n.request_id, n.status, n.attempt_count,
+    n.first_attempt_at, n.last_attempt_at, n.last_error_code, l.payload_json
+    FROM preview_notification_state n
+    JOIN preview_leads l ON l.business_id = n.business_id AND l.request_id = n.request_id
+    WHERE n.business_id = ? AND n.status IN ('pending', 'unconfirmed')
+    ORDER BY n.first_attempt_at ASC LIMIT ?`).bind('biz_test_001', boundedLimit).all();
+  const rows = Array.isArray(response) ? response : response?.results ?? [];
+  return rows.map(row => {
+    let payload = {};
+    try { payload = JSON.parse(row.payload_json); } catch {}
+    return { request_id: row.request_id, status: row.status, attempt_count: row.attempt_count,
+      first_attempt_at: row.first_attempt_at, last_attempt_at: row.last_attempt_at,
+      last_error_code: row.last_error_code,
+      lead: { name: String(payload.name ?? ''), zip: String(payload.zip ?? ''), message: String(payload.message ?? '') } };
+  });
+}
+
 function makeTarget(env) {
   let target;
   try { target = new URL(env.MAKE_TEST_WEBHOOK_URL); } catch { throw new Error('configuration'); }
@@ -152,15 +172,17 @@ export async function handle(request, env, dependencies = {}) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (!origin || origin !== env.INTAKE_TEST_ORIGIN || origin !== url.origin || url.search) return fail(403);
-    if (![null, 'forward', 'storage', 'capture', 'capture-alert'].includes(request.headers.get('X-SFS-Test'))) return fail(400);
-    const captureAlert = request.headers.get('X-SFS-Test') === 'capture-alert';
-    const capture = request.headers.get('X-SFS-Test') === 'capture' || captureAlert;
-    const storage = request.headers.get('X-SFS-Test') === 'storage';
+    const testType = request.headers.get('X-SFS-Test');
+    if (![null, 'forward', 'storage', 'capture', 'capture-alert', 'reconcile'].includes(testType)) return fail(400);
+    const reconcile = testType === 'reconcile';
+    const captureAlert = testType === 'capture-alert';
+    const capture = testType === 'capture' || captureAlert;
+    const storage = testType === 'storage';
     const forward = storage || request.headers.get('X-SFS-Test') === 'forward';
     const storageId = request.headers.get('X-SFS-Request-ID');
     if ((storage || capture) && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(storageId ?? '')) return fail(400);
     if ((forward || capture) && origin !== 'https://feature-hvac-secure-intake.secondflightstudios.pages.dev') return fail(403);
-    if (capture && !env.INTAKE_PREVIEW_DB) return fail(503, 'CAPTURE_CONFIGURATION');
+    if ((capture || reconcile) && !env.INTAKE_PREVIEW_DB) return fail(503, 'CAPTURE_CONFIGURATION');
     const auth = request.headers.get('Authorization') ?? '';
     if (auth.length > 512 || !await sameSecret(auth, 'Bearer ' + env.INTAKE_TEST_TOKEN)) return fail(403);
     const ip = request.headers.get('CF-Connecting-IP');
@@ -184,6 +206,13 @@ export async function handle(request, env, dependencies = {}) {
     // Validate the intended downstream contract without transmitting or retaining it.
     stage = 'final-check';
     if (!payload.phone || !payload.consent.recorded_at) return fail(400);
+    if (reconcile) {
+      stage = 'notification-reconciliation';
+      try {
+        const items = await listPreviewNotificationReconciliation(env.INTAKE_PREVIEW_DB);
+        return reply(200, { ok: true, mode: 'notification-reconciliation', count: items.length, items });
+      } catch { return reply(503, { ok: false, code: 'RECONCILIATION_UNAVAILABLE' }); }
+    }
     if (capture) {
       stage = 'durable-capture';
       payload.source = 'sfs_hvac_capture_test';
