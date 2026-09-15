@@ -96,11 +96,12 @@
           guidance[202] = 'The lead is stored, but the alert outcome requires inspection in Make. Do not send it again automatically. Request ID: ' + captureAlertId;
           guidance[502] = 'The lead is stored, but staff alert delivery could not be confirmed. Check Make before any manual retry. Request ID: ' + captureAlertId;
         }
+        if (reconcile) guidance[503] = 'The reconciliation queue could not be loaded. No alert was sent or retried.';
         const code = typeof body.code === 'string' ? ` Code: ${body.code}.` : '';
         result.textContent = `Test not completed (HTTP ${response.status}).${code} ${guidance[response.status] ?? 'Check the preview deployment.'}`;
       }
     } catch {
-      result.textContent = captureAlert ? 'The lead or alert outcome could not be confirmed. Keep this page open and check Make before retrying. Request ID: ' + captureAlertId : capture ? 'Database save could not be confirmed. Keep the page open and repeat the same database request. Request ID: ' + captureId : 'The outcome could not be confirmed. Check Make before retrying. For storage tests, use Repeat same storage request to preserve the request ID.';
+      result.textContent = reconcile ? 'The reconciliation queue could not be loaded. No alert was sent or retried.' : captureAlert ? 'The lead or alert outcome could not be confirmed. Keep this page open and check Make before retrying. Request ID: ' + captureAlertId : capture ? 'Database save could not be confirmed. Keep the page open and repeat the same database request. Request ID: ' + captureId : 'The outcome could not be confirmed. Check Make before retrying. For storage tests, use Repeat same storage request to preserve the request ID.';
     } finally {
       hasResult = true;
       challengeToken = ''; busy = false;
