@@ -111,9 +111,14 @@
               <p class="consent-links"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">SMS Terms &amp; Conditions</a></p>
             </fieldset>
 
+            <label for="intake-test-token">Private preview token *
+              <input id="intake-test-token" name="intake_test_token" type="password" autocomplete="off" required>
+              <span class="field-help">Use the INTAKE_TEST_TOKEN saved for the preview environment.</span>
+            </label>
+            <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAAEx2JqLT8A6b7dNC" data-action="hvac_intake_test" data-callback="sfsTurnstileCallback" data-expired-callback="sfsTurnstileExpired"></div>
             <div class="form-actions">
-              <button class="button button-primary" type="submit" disabled>Preview service request <span aria-hidden="true">→</span></button>
-              <p><strong>Demo mode:</strong> nothing is transmitted from this page.</p>
+              <button class="button button-primary" type="submit" disabled>Save controlled preview <span aria-hidden="true">→</span></button>
+              <p><strong>Preview only:</strong> no staff alert, SMS, or appointment.</p>
             </div>
             <div id="form-error" class="form-error" role="alert" hidden>Please complete the required fields and check any highlighted entries.</div>
           </form>
@@ -147,8 +152,7 @@
       </div>
     </div>
   </footer>
-  <script>
-    (()=>{const form=document.querySelector('#intake-form'),success=document.querySelector('#demo-success'),error=document.querySelector('#form-error'),summary=document.querySelector('#success-summary'),reset=document.querySelector('#reset-demo'),timestamp=document.querySelector('#consent-timestamp'),honeypot=document.querySelector('#company-site');if(!form||!success)return;form.querySelector('[type=submit]').disabled=false;form.addEventListener('submit',event=>{event.preventDefault();error.hidden=true;if(honeypot.value)return;if(!form.checkValidity()){form.classList.add('was-validated');error.hidden=false;form.querySelector(':invalid')?.focus();return}timestamp.value=new Date().toISOString();const data=new FormData(form),smsChoice=data.get('sms_consent')==='yes'?'You requested optional SMS follow-up.':'You did not request SMS follow-up.';summary.textContent=`Thanks, ${data.get('name')}. ${smsChoice}`;form.hidden=true;success.hidden=false;success.focus()});reset.addEventListener('click',()=>{form.reset();timestamp.value='';form.classList.remove('was-validated');success.hidden=true;form.hidden=false;form.querySelector('#name')?.focus()})})();
-  </script>
+  <script src="assets/js/demo.js" defer></script>
+
 </body>
 </html>
