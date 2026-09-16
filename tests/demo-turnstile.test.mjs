@@ -33,3 +33,36 @@ test('preview registers Turnstile callback before rendering and gates submit on 
   assert.equal(submit.disabled, true);
 });
 
+test('public preview sends only the explicit Turnstile token', async () => {
+  const script = await readFile(new URL('../assets/js/demo.js', import.meta.url), 'utf8');
+  const listeners = {};
+  const submit = { disabled: true };
+  const token = { value: 'private-test-token', addEventListener() {} };
+  const form = { hidden: false, checkValidity: () => true, querySelector: () => submit,
+    addEventListener: (name, handler) => { listeners[name] = handler; } };
+  const success = { hidden: true, focus() {} };
+  const nodes = { '#intake-form': form, '#demo-success': success, '#form-error': { hidden: true },
+    '#success-summary': { textContent: '' }, '#reset-demo': { addEventListener() {} },
+    '#intake-test-token': token, '#turnstile-widget': {} };
+  let sent;
+  const window = {};
+  runInNewContext(script, {
+    document: { querySelector: selector => nodes[selector] }, window,
+    FormData: class { constructor() { return new Map([
+      ['name', 'Invented Customer'], ['source', 'sfs_hvac_demo'],
+      ['intake_test_token', token.value], ['turnstile_token', 'injected-hidden'],
+      ['cf-turnstile-response', 'injected-response'],
+    ]); } },
+    crypto: { randomUUID: () => '00000000-0000-4000-8000-000000000000' },
+    location: { origin: 'https://preview.example' },
+    fetch: async (_url, options) => { sent = JSON.parse(options.body); return {
+      ok: true, json: async () => ({ ok: true, request_id: '00000000-0000-4000-8000-000000000000' }),
+    }; },
+  });
+  window.sfsTurnstileCallback('callback-response');
+  await listeners.submit({ preventDefault() {} });
+  assert.equal(sent['cf-turnstile-response'], undefined);
+  assert.equal(sent.turnstile_token, 'callback-response');
+  assert.equal(sent.intake_test_token, undefined);
+});
+
