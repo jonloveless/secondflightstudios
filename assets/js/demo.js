@@ -12,9 +12,9 @@
   let turnstileToken = '';
   const update = () => {
     submit.disabled = !(turnstileToken && token.value.trim() && form.checkValidity());
-    console.info('[SFS preview gate]', { valid: form.checkValidity(), invalidFields: [...form.querySelectorAll(':invalid')].map(field => field.id || field.name), privateTokenPresent: !!token.value.trim(), turnstileTokenPresent: !!turnstileToken, submitDisabled: submit.disabled });
+    console.info('[SFS preview gate] ' + JSON.stringify({ valid: form.checkValidity(), invalidFields: [...form.querySelectorAll(':invalid')].map(field => field.id || field.name), privateTokenPresent: !!token.value.trim(), turnstileTokenPresent: !!turnstileToken, submitDisabled: submit.disabled }));
   };
-  window.sfsTurnstileCallback = value => { console.info('[SFS preview callback]', { receivedResponse: !!value }); turnstileToken = value || ''; update(); };
+  window.sfsTurnstileCallback = value => { console.info('[SFS preview callback] ' + JSON.stringify({ receivedResponse: !!value })); turnstileToken = value || ''; update(); };
   window.sfsTurnstileExpired = () => { turnstileToken = ''; update(); };
   token.addEventListener('input', update);
   form.addEventListener('input', update);
