@@ -36,7 +36,6 @@
         'X-SFS-Request-ID': requestId,
       }, body: JSON.stringify(data) });
       const result = await response.json().catch(() => ({}));
-      console.info('[SFS preview response] ' + JSON.stringify({ status: response.status, code: result.code ?? null, message: result.message ?? null, responseReceived: true }));
       if (!response.ok || result.ok !== true) throw new Error('preview failed');
       summary.textContent = `Saved to the controlled preview database. Request ID: ${result.request_id}`;
       form.hidden = true; success.hidden = false; success.focus();
