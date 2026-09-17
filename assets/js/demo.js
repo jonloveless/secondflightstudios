@@ -43,7 +43,7 @@
       }, body: JSON.stringify(data) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || result.ok !== true) throw new Error('preview failed');
-      summary.textContent = `Saved to the controlled preview database. Request ID: ${result.request_id}`;
+      summary.textContent = `Saved to the controlled preview database; both test bots were notified. Request ID: ${result.request_id}`;
       pendingRequestId = '';
       pendingPayload = '';
       form.hidden = true; success.hidden = false; success.focus();
