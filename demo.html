@@ -38,7 +38,7 @@
         </div>
         <div class="demo-intro-copy">
           <p class="large-copy">This customer-facing HVAC intake demonstrates how a service request can be captured, summarized, prioritized, and routed for staff follow-up.</p>
-          <p>Use invented details only. This preview saves to the protected preview database and sends no staff alert, SMS, or appointment.</p>
+          <p>Use invented details only. This preview saves to the protected preview database and sends mock replies through the two test Telegram bots. No SMS or appointment is sent.</p>
         </div>
       </div>
     </section>
@@ -118,7 +118,7 @@
             <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAAEx2JqLT8A6b7dNC" data-action="hvac_intake_test" data-callback="sfsTurnstileCallback" data-expired-callback="sfsTurnstileExpired"></div>
             <div class="form-actions">
               <button class="button button-primary" type="submit" disabled>Save controlled preview <span aria-hidden="true">→</span></button>
-              <p><strong>Preview only:</strong> no staff alert, SMS, or appointment.</p>
+              <p><strong>Preview only:</strong> mock customer and staff Telegram messages only; no SMS or appointment.</p>
             </div>
             <div id="form-error" class="form-error" role="alert" hidden>Please complete the required fields and check any highlighted entries.</div>
           </form>
@@ -129,7 +129,7 @@
               <p class="eyebrow">PREVIEW COMPLETE</p>
               <h2>Your test request was saved.</h2>
               <p id="success-summary"></p>
-              <p>This invented request is stored in the protected preview database. No staff alert, SMS, or appointment was sent.</p>
+              <p>This invented request is stored in the protected preview database. Mock messages were sent through the customer and staff test bots. No SMS or appointment was sent.</p>
               <button id="reset-demo" class="button button-text" type="button">Try another request <span aria-hidden="true">↗</span></button>
             </div>
           </section>
