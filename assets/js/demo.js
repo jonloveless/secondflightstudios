@@ -10,6 +10,8 @@
   if (!form || !success || !token || !challenge || !submit) return;
 
   let turnstileToken = '';
+  let pendingRequestId = '';
+  let pendingPayload = '';
   const update = () => { submit.disabled = !(turnstileToken && token.value.trim() && form.checkValidity()); };
   window.sfsTurnstileCallback = value => { turnstileToken = value || ''; update(); };
   window.sfsTurnstileExpired = () => { turnstileToken = ''; update(); };
@@ -20,7 +22,6 @@
     event.preventDefault(); error.hidden = true; update();
     if (!form.checkValidity() || !token.value.trim() || !turnstileToken) { error.hidden = false; return; }
     submit.disabled = true;
-    const requestId = crypto.randomUUID();
     const data = Object.fromEntries(new FormData(form));
     delete data.source;
     delete data.intake_test_token;
@@ -29,6 +30,10 @@
     delete data['cf-turnstile-response'];
     data.sms_consent = data.sms_consent === 'yes';
     data.consent_version = 'sms-v1-2026-09-12';
+    const payload = JSON.stringify(data);
+    const requestId = pendingRequestId && pendingPayload === payload ? pendingRequestId : crypto.randomUUID();
+    pendingRequestId = requestId;
+    pendingPayload = payload;
     data.turnstile_token = turnstileToken;
     try {
       const response = await fetch('/api/intake', { method: 'POST', headers: {
@@ -39,11 +44,12 @@
       const result = await response.json().catch(() => ({}));
       if (!response.ok || result.ok !== true) throw new Error('preview failed');
       summary.textContent = `Saved to the controlled preview database. Request ID: ${result.request_id}`;
+      pendingRequestId = '';
+      pendingPayload = '';
       form.hidden = true; success.hidden = false; success.focus();
-    } catch { error.textContent = 'The preview could not save this test request. Check the private token and try again.'; error.hidden = false; }
+    } catch { error.textContent = `The outcome needs checking before any new request. Request ID: ${requestId}. Complete a fresh verification before retrying this same request.`; error.hidden = false; }
     finally { turnstileToken = ''; if (window.turnstile?.reset) window.turnstile.reset(challenge); update(); }
   });
-  reset?.addEventListener('click', () => { form.reset(); success.hidden = true; form.hidden = false; error.hidden = true; turnstileToken = ''; if (window.turnstile?.reset) window.turnstile.reset(challenge); update(); form.querySelector('#name')?.focus(); });
+  reset?.addEventListener('click', () => { form.reset(); success.hidden = true; form.hidden = false; error.hidden = true; turnstileToken = ''; pendingRequestId = ''; pendingPayload = ''; if (window.turnstile?.reset) window.turnstile.reset(challenge); update(); form.querySelector('#name')?.focus(); });
   update();
 })();
-
