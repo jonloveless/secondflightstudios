@@ -46,13 +46,29 @@ test('capture endpoint saves validated fields, never forwards, and reports DB un
  const failure=await handle(req(),{...env,INTAKE_PREVIEW_DB:broken},deps);assert.equal(failure.status,503);assert.ok(!(await failure.text()).includes('PRIVATE'));
  db.sqlite.close();
 });
-test('public preview saves mapped form fields without downstream delivery', async () => {
- const db=database();const env={INTAKE_MODE:'controlled-dry-run',INTAKE_TEST_ORIGIN:origin,INTAKE_TEST_TOKEN:'x'.repeat(32),TURNSTILE_SECRET_KEY:'secret',INTAKE_PREVIEW_DB:db};
+test('public demo sends one D1-claimed workflow and confirms exact outcomes', async () => {
+ const db=database();const env={INTAKE_MODE:'controlled-dry-run',INTAKE_TEST_ORIGIN:origin,INTAKE_TEST_TOKEN:'x'.repeat(32),TURNSTILE_SECRET_KEY:'secret',INTAKE_PREVIEW_DB:db,MAKE_TEST_WEBHOOK_URL:'https://hook.us2.make.com/'+('a'.repeat(32)),MAKE_TEST_API_KEY:'make-secret'};
  const requestId='e40dd3bb-2ed8-4b64-9117-1ace05c821a3';
- const request=new Request(origin+'/api/intake',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+env.INTAKE_TEST_TOKEN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.9','X-SFS-Test':'public-preview','X-SFS-Request-ID':requestId},body:JSON.stringify({...data,name:'Invented Preview Customer',address:'1 Test Lane'})});
- let calls=0;const response=await handle(request,env,{throttle:()=>true,fetch:async url=>{calls++;assert.equal(url,'https://challenges.cloudflare.com/turnstile/v0/siteverify');return Response.json({success:true,hostname:new URL(origin).hostname,action:'hvac_intake_test'});}});
- const body=await response.json();assert.equal(response.status,200);assert.equal(body.mode,'public-preview');assert.equal(body.storage_status,'saved');assert.equal(body.notification_status,'not_requested');assert.equal(body.downstream_actions,false);assert.equal(calls,1);
+ const request=()=>new Request(origin+'/api/intake',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+env.INTAKE_TEST_TOKEN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.9','X-SFS-Test':'public-preview','X-SFS-Request-ID':requestId},body:JSON.stringify({...data,name:'Invented Preview Customer',address:'1 Test Lane'})});
+ let makeCalls=0;const deps={throttle:()=>true,fetch:async (url,options)=>{
+  if(url.includes('siteverify')) { assert.ok(options.signal);return Response.json({success:true,hostname:new URL(origin).hostname,action:'hvac_intake_test'}); }
+  makeCalls++;const sent=JSON.parse(options.body);assert.equal(sent.request_id,requestId);assert.equal(sent.source,'sfs_hvac_d1_demo_test');assert.equal(sent.name,'Invented Preview Customer');assert.equal(options.headers['x-make-apikey'],'make-secret');
+  return Response.json({status:'demo_workflow_result',request_id:requestId,sheet_status:'stored',customer_status:'sent',staff_status:'sent',customer_message_ref:'21',staff_message_ref:'22',appointment_confirmed:false});
+ }};
+ const response=await handle(request(),env,deps);
+ const body=await response.json();assert.equal(response.status,200);assert.equal(body.mode,'public-preview');assert.equal(body.storage_status,'saved');assert.equal(body.workflow_status,'sent');assert.equal(makeCalls,1);
+ const repeat=await handle(request(),env,deps);assert.equal(repeat.status,200);assert.equal((await repeat.json()).workflow_repeated,false);assert.equal(makeCalls,1);
  const row=db.sqlite.prepare('SELECT payload_json FROM preview_leads WHERE request_id=?').get(requestId);const saved=JSON.parse(row.payload_json);assert.equal(saved.name,'Invented Preview Customer');assert.equal(saved.address,'1 Test Lane');assert.equal(saved.source,'sfs_hvac_public_preview');assert.equal(saved.consent.source_page,origin+'/demo');assert.equal(saved.consent.capture_context,'public_preview_test');db.sqlite.close();
+});
+test('uncertain demo workflow is held and never sent again',async()=>{
+ const db=database();const env={INTAKE_MODE:'controlled-dry-run',INTAKE_TEST_ORIGIN:origin,INTAKE_TEST_TOKEN:'x'.repeat(32),TURNSTILE_SECRET_KEY:'secret',INTAKE_PREVIEW_DB:db,MAKE_TEST_WEBHOOK_URL:'https://hook.us2.make.com/'+('a'.repeat(32)),MAKE_TEST_API_KEY:'make-secret'};
+ const requestId='f40dd3bb-2ed8-4b64-9117-1ace05c821a3';
+ const request=()=>new Request(origin+'/api/intake',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+env.INTAKE_TEST_TOKEN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.9','X-SFS-Test':'public-preview','X-SFS-Request-ID':requestId},body:JSON.stringify(data)});
+ let makeCalls=0;const deps={throttle:()=>true,fetch:async url=>url.includes('siteverify')?Response.json({success:true,hostname:new URL(origin).hostname,action:'hvac_intake_test'}):(makeCalls++,Response.json({status:'demo_workflow_result',request_id:requestId,sheet_status:'stored',customer_status:'sent',staff_status:'unconfirmed',customer_message_ref:'21',staff_message_ref:'',appointment_confirmed:false}))};
+ assert.equal((await handle(request(),env,deps)).status,502);
+ assert.equal((await handle(request(),env,deps)).status,202);
+ assert.equal(makeCalls,1);
+ assert.equal(db.sqlite.prepare('SELECT status FROM preview_notification_state WHERE request_id=?').get(requestId).status,'unconfirmed');db.sqlite.close();
 });
 test('notification claim is atomic for a stored lead',async()=>{
  const db=database();const payload=validate(data,origin,new Date('2026-09-15T00:00:00Z'));
@@ -97,4 +113,3 @@ test('reconciliation lists only unresolved alerts without calling Make or exposi
  const body=await response.json();assert.equal(response.status,200);assert.equal(body.mode,'notification-reconciliation');assert.equal(body.count,1);assert.equal(body.items[0].request_id,unresolvedId);assert.equal(calls,1);
  db.sqlite.close();
 });
-
