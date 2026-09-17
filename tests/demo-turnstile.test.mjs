@@ -66,3 +66,41 @@ test('public preview sends only the explicit Turnstile token', async () => {
   assert.equal(sent.intake_test_token, undefined);
 });
 
+test('uncertain preview request retries with the same request ID after fresh verification', async () => {
+  const script = await readFile(new URL('../assets/js/demo.js', import.meta.url), 'utf8');
+  const listeners = {};
+  const submit = { disabled: true };
+  const token = { value: 'private-test-token', addEventListener() {} };
+  const form = { hidden: false, checkValidity: () => true, querySelector: () => submit,
+    addEventListener: (name, handler) => { listeners[name] = handler; } };
+  const nodes = { '#intake-form': form, '#demo-success': { hidden: true, focus() {} },
+    '#form-error': { hidden: true, textContent: '' }, '#success-summary': { textContent: '' },
+    '#reset-demo': { addEventListener() {} }, '#intake-test-token': token, '#turnstile-widget': {} };
+  let attempts = 0;
+  const ids = [];
+  const window = { turnstile: { reset() {} } };
+  runInNewContext(script, {
+    document: { querySelector: selector => nodes[selector] }, window,
+    FormData: class { constructor() { return new Map([
+      ['name', 'Invented Customer'], ['phone', '8025550147'], ['zip', '05401'],
+      ['message', 'Invented furnace issue'], ['cf-turnstile-response', 'browser-token'],
+    ]); } },
+    crypto: { randomUUID: () => '00000000-0000-4000-8000-000000000001' },
+    location: { origin: 'https://preview.example' },
+    fetch: async (_url, options) => {
+      ids.push(options.headers['X-SFS-Request-ID']);
+      attempts++;
+      if (attempts === 1) throw new Error('network uncertainty');
+      return { ok: true, json: async () => ({ ok: true, request_id: ids[1] }) };
+    },
+  });
+  window.sfsTurnstileCallback('first-response');
+  await listeners.submit({ preventDefault() {} });
+  assert.equal(nodes['#form-error'].hidden, false);
+  assert.equal(submit.disabled, true);
+  window.sfsTurnstileCallback('fresh-response');
+  await listeners.submit({ preventDefault() {} });
+  assert.equal(attempts, 2);
+  assert.equal(ids[0], ids[1]);
+  assert.equal(nodes['#demo-success'].hidden, false);
+});
