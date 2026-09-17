@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HVAC Intake Demo | Second Flight Studios</title>
-  <meta name="description" content="Try Second Flight Studios' customer-intake and lead-routing demonstration for service businesses.">
+  <meta name="description" content="Controlled preview of the Second Flight Studios HVAC intake flow.">
   <link rel="canonical" href="https://secondflightstudios.com/demo.html">
   <link rel="stylesheet" href="assets/css/styles.css">
   <style>
@@ -33,12 +33,12 @@
     <section class="demo-intro">
       <div class="container demo-intro-grid">
         <div>
-          <span class="eyebrow"><span class="status-dot"></span> INTERACTIVE DEMO · NO DATA SENT</span>
+          <span class="eyebrow"><span class="status-dot"></span> CONTROLLED PREVIEW · TEST DATA ONLY</span>
           <h1>Help starts with<br><em>one clear request.</em></h1>
         </div>
         <div class="demo-intro-copy">
           <p class="large-copy">This customer-facing HVAC intake demonstrates how a service request can be captured, summarized, prioritized, and routed for staff follow-up.</p>
-          <p>Built by Second Flight Studios. This preview does not book or confirm appointments, and it does not currently transmit your information.</p>
+          <p>Use invented details only. This preview saves to the protected preview database and sends mock replies through the two test Telegram bots. No SMS or appointment is sent.</p>
         </div>
       </div>
     </section>
@@ -65,7 +65,7 @@
           <form id="intake-form" class="intake-form" novalidate>
             <input type="hidden" name="source" value="sfs_hvac_demo">
             <input type="hidden" name="consent_version" value="sms-v1-2026-09-12">
-            <input type="hidden" id="consent-timestamp" name="consent_timestamp" value="">
+            <input type="hidden" id="consent-timestamp" name="consent_timestamp" value="">\n            <input type="hidden" name="turnstile_token" value="">
             <div class="honeypot" aria-hidden="true">
               <label for="company-site">Company website</label>
               <input id="company-site" name="company_site" type="text" tabindex="-1" autocomplete="off">
@@ -111,9 +111,14 @@
               <p class="consent-links"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">SMS Terms &amp; Conditions</a></p>
             </fieldset>
 
+            <label for="intake-test-token">Private preview token *
+              <input id="intake-test-token" name="intake_test_token" type="password" autocomplete="off" required>
+              <span class="field-help">Use the INTAKE_TEST_TOKEN saved for the preview environment.</span>
+            </label>
+            <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAAEx2JqLT8A6b7dNC" data-action="hvac_intake_test" data-callback="sfsTurnstileCallback" data-expired-callback="sfsTurnstileExpired"></div>
             <div class="form-actions">
-              <button class="button button-primary" type="submit" disabled>Preview service request <span aria-hidden="true">→</span></button>
-              <p><strong>Demo mode:</strong> nothing is transmitted from this page.</p>
+              <button class="button button-primary" type="submit" disabled>Save controlled preview <span aria-hidden="true">→</span></button>
+              <p><strong>Preview only:</strong> mock customer and staff Telegram messages only; no SMS or appointment.</p>
             </div>
             <div id="form-error" class="form-error" role="alert" hidden>Please complete the required fields and check any highlighted entries.</div>
           </form>
@@ -122,9 +127,9 @@
             <span class="success-icon" aria-hidden="true">✓</span>
             <div>
               <p class="eyebrow">PREVIEW COMPLETE</p>
-              <h2>Your request is ready.</h2>
+              <h2>Your test request was saved.</h2>
               <p id="success-summary"></p>
-              <p>A production version would now send the request into the intake workflow for triage and staff follow-up. No appointment has been scheduled or confirmed.</p>
+              <p>This invented request is stored in the protected preview database. Mock messages were sent through the customer and staff test bots. No SMS or appointment was sent.</p>
               <button id="reset-demo" class="button button-text" type="button">Try another request <span aria-hidden="true">↗</span></button>
             </div>
           </section>
@@ -147,8 +152,8 @@
       </div>
     </div>
   </footer>
-  <script>
-    (()=>{const form=document.querySelector('#intake-form'),success=document.querySelector('#demo-success'),error=document.querySelector('#form-error'),summary=document.querySelector('#success-summary'),reset=document.querySelector('#reset-demo'),timestamp=document.querySelector('#consent-timestamp'),honeypot=document.querySelector('#company-site');if(!form||!success)return;form.querySelector('[type=submit]').disabled=false;form.addEventListener('submit',event=>{event.preventDefault();error.hidden=true;if(honeypot.value)return;if(!form.checkValidity()){form.classList.add('was-validated');error.hidden=false;form.querySelector(':invalid')?.focus();return}timestamp.value=new Date().toISOString();const data=new FormData(form),smsChoice=data.get('sms_consent')==='yes'?'You requested optional SMS follow-up.':'You did not request SMS follow-up.';summary.textContent=`Thanks, ${data.get('name')}. ${smsChoice}`;form.hidden=true;success.hidden=false;success.focus()});reset.addEventListener('click',()=>{form.reset();timestamp.value='';form.classList.remove('was-validated');success.hidden=true;form.hidden=false;form.querySelector('#name')?.focus()})})();
-  </script>
+  <script src="assets/js/demo.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
+
 </body>
 </html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; frame-src https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Controlled intake test | Second Flight Studios</title>
+  <link rel="stylesheet" href="assets/css/intake-test.css">
+  <script src="assets/js/intake-test.js" defer></script>
+</head>
+<body>
+  <header><a href="demo">SFS<span>.</span> <small>SECOND FLIGHT STUDIOS</small></a></header>
+  <main>
+    <p class="eyebrow">OPERATOR TEST · SYNTHETIC DETAILS ONLY</p>
+    <h1>Check the secure intake.</h1>
+    <p>The dry-run validates on Cloudflare only. The forwarding test sends the fixed synthetic sample below to the isolated Make receiver. Neither test sends customer notifications or books an appointment.</p>
+    <section aria-labelledby="sample-title">
+      <h2 id="sample-title">Sample request</h2>
+      <dl><dt>Name</dt><dd>Demo Customer</dd><dt>Phone</dt><dd>(802) 555-0147</dd><dt>ZIP</dt><dd>05401</dd><dt>Issue</dt><dd>Test only: heat pump is not warming the house.</dd><dt>SMS consent</dt><dd>No — synthetic test</dd></dl>
+    </section>
+    <section aria-labelledby="access-title">
+      <h2 id="access-title">Run a private check</h2>
+      <p>Enter the <strong>INTAKE_TEST_TOKEN</strong> you saved in your password manager. This is not your Turnstile secret key. The token is sent only to this preview’s endpoint and cleared from the field when you run the test.</p>
+      <label for="test-token">Private test token</label>
+      <input id="test-token" type="password" autocomplete="off" spellcheck="false" minlength="32" maxlength="256">
+      <div id="turnstile-container"></div>
+      <button id="run-test" type="button" disabled>Run dry-run test</button>
+      <button id="forward-test" type="button" disabled>Send synthetic sample to Make</button>
+      <p>The storage test saves one synthetic lead and sends a staff test alert. Repeat uses the same request ID to check duplicate handling. Re-enter your private token before each test. Keep this page open until you have checked the result; reloading clears the repeat ID. No customer is contacted.</p>
+      <button id="storage-test" type="button" disabled>Save sample and alert staff</button>
+      <button id="repeat-storage-test" type="button" disabled>Repeat same storage request</button>
+      <h2>Save submitted test details</h2>
+      <p>Use invented details only. This test saves your entries in the preview database without sending a staff alert. Repeat keeps the same ID; changing details before repeating should produce a conflict. Reloading clears the repeat ID.</p>
+      <label for="capture-name">Test name</label><input id="capture-name" value="Demo Customer" maxlength="100">
+      <label for="capture-phone">Test phone</label><input id="capture-phone" value="(802) 555-0147" maxlength="32">
+      <label for="capture-email">Test email (optional)</label><input id="capture-email" value="demo@example.com" maxlength="254">
+      <label for="capture-zip">Test ZIP</label><input id="capture-zip" value="05401" maxlength="10">
+      <label for="capture-address">Test address (optional)</label><input id="capture-address" value="" maxlength="200">
+      <label for="capture-message">Test issue</label><input id="capture-message" value="Test only: heat pump is not warming the house." maxlength="2000">
+      <label for="capture-preferred_time">Test preferred time (optional)</label><input id="capture-preferred_time" value="Tomorrow afternoon" maxlength="160">
+      <p>SMS consent is false for these synthetic tests.</p>
+        <button id="capture-test" type="button" disabled>Save details to preview database</button>
+        <button id="repeat-capture-test" type="button" disabled>Repeat same database request</button>
+        <p class="test-guidance">The D1-gated alert test creates a separate request. Only a newly claimed notification may reach the isolated staff-test bot. Repeating checks the saved outcome and never sends another alert automatically.</p>
+        <button id="capture-alert-test" type="button" disabled>Save new lead and alert test staff</button>
+        <button id="repeat-capture-alert-test" type="button" disabled>Check same alert request</button>
+        <h2>Review unresolved staff alerts</h2>
+        <p>Load the preview-only reconciliation queue after checking Make. This view cannot resend an alert and shows only the synthetic name, ZIP, and issue needed to investigate the request.</p>
+        <button id="review-alerts" type="button" disabled>Load unresolved alerts</button>
+        <div id="reconciliation-list" aria-live="polite"></div>
+        <p id="test-result" role="status" aria-live="polite">Loading verification…</p>
+      <noscript><p>JavaScript is required for this controlled test.</p></noscript>
+    </section>
+    <p class="footnote">The public demo remains separate. This page does not store tokens or test details in browser storage.</p>
+  </main>
+</body>
+</html>
+
+
