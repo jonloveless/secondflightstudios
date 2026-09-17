@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HVAC Intake Demo | Second Flight Studios</title>
-  <meta name="description" content="Try Second Flight Studios' customer-intake and lead-routing demonstration for service businesses.">
+  <title>Service Intake Demo | Second Flight Studios</title>
+  <meta name="description" content="See how Second Flight Studios captures and organizes a service-business inquiry.">
   <link rel="canonical" href="https://secondflightstudios.com/demo.html">
   <link rel="stylesheet" href="assets/css/styles.css">
   <style>
@@ -24,7 +24,7 @@
       <nav class="site-nav" aria-label="Demo navigation">
         <a href="index.html">Studio</a>
         <a href="privacy.html">Privacy</a>
-        <a href="terms.html" class="nav-contact">SMS terms <span aria-hidden="true">↗</span></a>
+        <a href="index.html" class="nav-contact">Explore SFS <span aria-hidden="true">↗</span></a>
       </nav>
     </div>
   </header>
@@ -33,12 +33,12 @@
     <section class="demo-intro">
       <div class="container demo-intro-grid">
         <div>
-          <span class="eyebrow"><span class="status-dot"></span> INTERACTIVE DEMO · NO DATA SENT</span>
+          <span class="eyebrow"><span class="status-dot"></span> SECOND FLIGHT STUDIOS DEMO</span>
           <h1>Help starts with<br><em>one clear request.</em></h1>
         </div>
         <div class="demo-intro-copy">
-          <p class="large-copy">This customer-facing HVAC intake demonstrates how a service request can be captured, summarized, prioritized, and routed for staff follow-up.</p>
-          <p>Built by Second Flight Studios. This preview does not book or confirm appointments, and it does not currently transmit your information.</p>
+          <p class="large-copy">See how a service request can be captured, summarized, prioritized, and prepared for staff follow-up.</p>
+          <p>You may enter your own contact details and inquiry. Second Flight Studios uses your submission to demonstrate its intake workflow, storing it in a controlled demo database and lead log and sending a sample reply and staff summary to our private test bots. We do not send you SMS, book an appointment, or forward your inquiry to an outside service provider.</p>
         </div>
       </div>
     </section>
@@ -50,22 +50,20 @@
           <ol>
             <li><strong>Tell us what’s happening.</strong><span>Share the equipment, symptoms, and anything urgent.</span></li>
             <li><strong>The request is organized.</strong><span>The workflow prepares a concise summary and routes it to the right team.</span></li>
-            <li><strong>A person follows up.</strong><span>Any requested appointment time remains unconfirmed until the service provider responds.</span></li>
+            <li><strong>See the demo result.</strong><span>Any preferred time is recorded only. This form does not book an appointment or arrange a service visit.</span></li>
           </ol>
         </aside>
 
         <div class="intake-card">
           <div class="intake-card-heading">
-            <span class="eyebrow">HVAC SERVICE INTAKE</span>
+            <span class="eyebrow">SERVICE INQUIRY DEMO</span>
             <h2 id="request-title">What can we help with?</h2>
             <p>Fields marked * are required.</p>
           </div>
 
-          <noscript><p>This preview requires JavaScript. No information can be submitted.</p></noscript>
+          <noscript><p>This demo requires JavaScript. No information can be submitted.</p></noscript>
           <form id="intake-form" class="intake-form" novalidate>
-            <input type="hidden" name="source" value="sfs_hvac_demo">
-            <input type="hidden" name="consent_version" value="sms-v1-2026-09-12">
-            <input type="hidden" id="consent-timestamp" name="consent_timestamp" value="">
+            <input type="hidden" name="turnstile_token" value="">
             <div class="honeypot" aria-hidden="true">
               <label for="company-site">Company website</label>
               <input id="company-site" name="company_site" type="text" tabindex="-1" autocomplete="off">
@@ -84,7 +82,7 @@
               <label for="email">Email
                 <input id="email" name="email" type="email" autocomplete="email">
               </label>
-              <label for="zip">Service ZIP code *
+              <label for="zip">ZIP code *
                 <input id="zip" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" pattern="[0-9]{5}(-[0-9]{4})?" required>
               </label>
             </div>
@@ -93,27 +91,20 @@
               <input id="address" name="address" type="text" autocomplete="street-address">
             </label>
 
-            <label for="message">What’s happening? *
-              <textarea id="message" name="message" rows="6" placeholder="Example: The heat pump is running, but the house is not getting warm. The outdoor unit is making a clicking sound." required></textarea>
+            <label for="message">What can we help with? *
+              <textarea id="message" name="message" rows="6" placeholder="Describe your service request or question." required></textarea>
             </label>
 
             <label for="preferred-time">Preferred day or time
               <input id="preferred-time" name="preferred_time" type="text" placeholder="Example: Tuesday afternoon">
-              <span class="field-help">This is a preference only. Availability and appointments must be confirmed by the service provider.</span>
+              <span class="field-help">This is recorded for the demonstration only; no appointment is requested or confirmed.</span>
             </label>
 
-            <fieldset class="sms-choice">
-              <legend>Optional text updates</legend>
-              <label class="consent-row" for="sms-consent">
-                <input id="sms-consent" name="sms_consent" type="checkbox" value="yes">
-                <span>I agree to receive conversational text messages from Second Flight Studios about this service request, including follow-up questions, scheduling coordination, and service updates. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is optional and is not a condition of purchase.</span>
-              </label>
-              <p class="consent-links"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">SMS Terms &amp; Conditions</a></p>
-            </fieldset>
-
+            <p class="field-help">By submitting, you agree that Second Flight Studios may use the information above solely to demonstrate this intake workflow. See our <a href="privacy.html"><u>Privacy Policy</u></a>.</p>
+            <div id="turnstile-widget" class="cf-turnstile" data-sitekey="0x4AAAAAAEx2JqLT8A6b7dNC" data-action="sfs_public_demo" data-callback="sfsTurnstileCallback" data-expired-callback="sfsTurnstileExpired"></div>
             <div class="form-actions">
-              <button class="button button-primary" type="submit" disabled>Preview service request <span aria-hidden="true">→</span></button>
-              <p><strong>Demo mode:</strong> nothing is transmitted from this page.</p>
+              <button class="button button-primary" type="submit" disabled>Send demo inquiry <span aria-hidden="true">→</span></button>
+              <p><strong>Demonstration only:</strong> messages go to Second Flight Studios' private test bots. You will not receive an automated reply, SMS, or appointment.</p>
             </div>
             <div id="form-error" class="form-error" role="alert" hidden>Please complete the required fields and check any highlighted entries.</div>
           </form>
@@ -121,10 +112,10 @@
           <section id="demo-success" class="demo-success" aria-live="polite" tabindex="-1" hidden>
             <span class="success-icon" aria-hidden="true">✓</span>
             <div>
-              <p class="eyebrow">PREVIEW COMPLETE</p>
-              <h2>Your request is ready.</h2>
+              <p class="eyebrow">DEMO COMPLETE</p>
+              <h2>Your inquiry was recorded for the demo.</h2>
               <p id="success-summary"></p>
-              <p>A production version would now send the request into the intake workflow for triage and staff follow-up. No appointment has been scheduled or confirmed.</p>
+              <p>Second Flight Studios stored this inquiry in its controlled demo records and sent sample messages to its private test bots. You will not receive a bot reply, SMS, or appointment from this form.</p>
               <button id="reset-demo" class="button button-text" type="button">Try another request <span aria-hidden="true">↗</span></button>
             </div>
           </section>
@@ -147,8 +138,9 @@
       </div>
     </div>
   </footer>
-  <script>
-    (()=>{const form=document.querySelector('#intake-form'),success=document.querySelector('#demo-success'),error=document.querySelector('#form-error'),summary=document.querySelector('#success-summary'),reset=document.querySelector('#reset-demo'),timestamp=document.querySelector('#consent-timestamp'),honeypot=document.querySelector('#company-site');if(!form||!success)return;form.querySelector('[type=submit]').disabled=false;form.addEventListener('submit',event=>{event.preventDefault();error.hidden=true;if(honeypot.value)return;if(!form.checkValidity()){form.classList.add('was-validated');error.hidden=false;form.querySelector(':invalid')?.focus();return}timestamp.value=new Date().toISOString();const data=new FormData(form),smsChoice=data.get('sms_consent')==='yes'?'You requested optional SMS follow-up.':'You did not request SMS follow-up.';summary.textContent=`Thanks, ${data.get('name')}. ${smsChoice}`;form.hidden=true;success.hidden=false;success.focus()});reset.addEventListener('click',()=>{form.reset();timestamp.value='';form.classList.remove('was-validated');success.hidden=true;form.hidden=false;form.querySelector('#name')?.focus()})})();
-  </script>
+  <script src="assets/js/demo.js" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
+
 </body>
 </html>
+
