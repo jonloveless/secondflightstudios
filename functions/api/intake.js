@@ -198,6 +198,7 @@ export async function handle(request, env, dependencies = {}) {
     stage = 'turnstile-request';
     const verification = await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
+      signal: AbortSignal.timeout(8000),
       body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: data.turnstile_token, remoteip: ip }),
     });
     if (!verification.ok) return fail(503, 'TURNSTILE_UNAVAILABLE');
@@ -215,16 +216,54 @@ export async function handle(request, env, dependencies = {}) {
       } catch { return reply(503, { ok: false, code: 'RECONCILIATION_UNAVAILABLE' }); }
     }
     if (publicPreview) {
-      stage = 'public-preview-capture';
+      stage = 'public-preview-workflow';
       payload.source = 'sfs_hvac_public_preview';
       payload.consent.source_page = origin + '/demo';
       payload.consent.capture_context = 'public_preview_test';
       try {
         const saved = await savePreviewLead(env.INTAKE_PREVIEW_DB, storageId, payload);
         if (saved.status === 'conflict') return reply(409, { ok: false, code: 'REQUEST_ID_CONFLICT', request_id: storageId });
-        return reply(200, { ok: true, mode: 'public-preview', request_id: storageId,
-          stored: true, storage_status: saved.status, notification_status: 'not_requested',
-          downstream_actions: false });
+        let claim;
+        try { claim = await claimPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, payload.consent.recorded_at); }
+        catch { return reply(503, { ok: false, code: 'WORKFLOW_CLAIM_UNCONFIRMED', request_id: storageId, stored: true }); }
+        if (!claim.claimed) {
+          if (claim.status === 'sent') return reply(200, { ok: true, mode: 'public-preview', request_id: storageId,
+            stored: true, storage_status: saved.status, workflow_status: 'sent', workflow_repeated: false });
+          return reply(202, { ok: false, code: 'WORKFLOW_RECONCILIATION_REQUIRED', request_id: storageId,
+            stored: true, workflow_status: claim.status });
+        }
+        let target;
+        try { target = makeTarget(env); }
+        catch {
+          await finishPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, 'unconfirmed', '', 'MAKE_TEST_CONFIGURATION').catch(() => {});
+          return reply(503, { ok: false, code: 'MAKE_TEST_CONFIGURATION', request_id: storageId, stored: true });
+        }
+        const outbound = { schema_version: 'hvac-lead.v1', request_id: storageId,
+          received_at: payload.consent.recorded_at, environment: 'test', ...payload,
+          source: 'sfs_hvac_d1_demo_test' };
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        try {
+          const delivery = await fetcher(target.href, { method: 'POST', redirect: 'manual', signal: controller.signal,
+            headers: { 'Content-Type': 'application/json', 'x-make-apikey': env.MAKE_TEST_API_KEY }, body: JSON.stringify(outbound) });
+          if (delivery.status !== 200) throw new Error('MAKE_TEST_REJECTED');
+          const ack = await boundedJson(delivery);
+          if (ack.status !== 'demo_workflow_result' || ack.request_id !== storageId ||
+              !['stored', 'updated'].includes(ack.sheet_status) ||
+              ack.customer_status !== 'sent' || ack.staff_status !== 'sent' ||
+              !ack.customer_message_ref || !ack.staff_message_ref || ack.appointment_confirmed !== false) {
+            throw new Error('DEMO_WORKFLOW_UNCONFIRMED');
+          }
+          try { await finishPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, 'sent', ack.staff_message_ref); }
+          catch { return reply(503, { ok: false, code: 'WORKFLOW_LOG_UNCONFIRMED', request_id: storageId, stored: true }); }
+          return reply(200, { ok: true, mode: 'public-preview', request_id: storageId,
+            stored: true, storage_status: saved.status, workflow_status: 'sent',
+            sheet_status: ack.sheet_status, customer_status: ack.customer_status, staff_status: ack.staff_status });
+        } catch (error) {
+          const code = error.message === 'MAKE_TEST_REJECTED' ? 'MAKE_TEST_REJECTED' : 'DEMO_WORKFLOW_UNCONFIRMED';
+          await finishPreviewNotification(env.INTAKE_PREVIEW_DB, payload.business_id, storageId, 'unconfirmed', '', code).catch(() => {});
+          return reply(502, { ok: false, code, request_id: storageId, stored: true, workflow_status: 'unconfirmed' });
+        } finally { clearTimeout(timer); }
       } catch { return reply(503, { ok: false, code: 'CAPTURE_UNCONFIRMED', request_id: storageId }); }
     }
     if (capture) {
@@ -316,4 +355,3 @@ export async function handle(request, env, dependencies = {}) {
 }
 
 export const onRequest = ({ request, env }) => handle(request, env);
-
