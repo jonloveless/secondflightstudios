@@ -1,2 +1,1 @@
-{"version":1,"include":["/api/intake"],"exclude":[]}
-
+{"version":1,"include":["/api/intake","/api/sms-consent","/api/sms-twilio"],"exclude":[]}
