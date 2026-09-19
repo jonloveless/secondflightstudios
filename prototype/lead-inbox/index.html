@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f6f7">
+  <title>SFS Lead Inbox — Prototype</title>
+  <meta name="description" content="A static, non-production prototype of the Second Flight Studios mobile lead inbox.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="prototype-banner" role="note">STATIC PRODUCT PROTOTYPE · NO MESSAGES ARE SENT</div>
+
+  <main class="app-shell" id="app">
+    <section class="screen inbox-screen" id="inbox-screen" aria-labelledby="inbox-title">
+      <header class="app-header">
+        <a class="wordmark" href="../../index.html" aria-label="Second Flight Studios home">
+          <span>SFS<span class="brand-dot">.</span></span>
+          <small>SECOND FLIGHT<br>STUDIOS</small>
+        </a>
+        <div class="owner-chip" aria-label="Signed in as Jonathan">
+          <span class="owner-status" aria-hidden="true"></span>
+          <span>Jonathan</span>
+          <span class="owner-avatar" aria-hidden="true">JL</span>
+        </div>
+      </header>
+
+      <div class="inbox-heading">
+        <div>
+          <p class="eyebrow">FRIDAY · LIVE QUEUE</p>
+          <h1 id="inbox-title">Lead inbox</h1>
+        </div>
+        <button class="icon-button" id="reset-demo" type="button" aria-label="Reset prototype data" title="Reset prototype data">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7"/></svg>
+        </button>
+      </div>
+
+      <section class="response-focus" aria-label="Response focus">
+        <div>
+          <span class="focus-count" id="needs-you-count">3</span>
+          <span class="focus-label">waiting on you</span>
+        </div>
+        <div class="focus-divider" aria-hidden="true"></div>
+        <div>
+          <span class="focus-time">&lt; 10 min</span>
+          <span class="focus-label">response target</span>
+        </div>
+        <span class="focus-spark" aria-hidden="true">
+          <svg viewBox="0 0 64 30"><path d="M2 23 15 17l9 4 12-15 9 11 17-12"/></svg>
+        </span>
+      </section>
+
+      <nav class="filter-tabs" aria-label="Filter leads">
+        <button class="filter-tab is-active" type="button" data-filter="active">Active <span id="active-count">5</span></button>
+        <button class="filter-tab" type="button" data-filter="needs-response">Needs response <span id="needs-response-count">3</span></button>
+        <button class="filter-tab" type="button" data-filter="closed">Closed <span id="closed-count">1</span></button>
+      </nav>
+
+      <div class="lead-list" id="lead-list" aria-live="polite"></div>
+      <p class="empty-state" id="empty-state" hidden>No leads in this view.</p>
+    </section>
+
+    <section class="screen detail-screen" id="detail-screen" aria-labelledby="detail-title" hidden>
+      <header class="detail-header">
+        <button class="back-button" id="back-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          Inbox
+        </button>
+        <span class="detail-id" id="detail-id"></span>
+        <button class="icon-button" type="button" id="more-button" aria-label="More prototype information">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        </button>
+      </header>
+
+      <div id="lead-detail"></div>
+    </section>
+  </main>
+
+  <div class="action-sheet-backdrop" id="sheet-backdrop" hidden></div>
+  <section class="action-sheet" id="assign-sheet" aria-labelledby="assign-title" role="dialog" aria-modal="true" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-heading">
+      <div>
+        <p class="eyebrow">OWNERSHIP</p>
+        <h2 id="assign-title">Assign lead</h2>
+      </div>
+      <button class="icon-button sheet-close" type="button" aria-label="Close assignment panel">×</button>
+    </div>
+    <div class="assignee-options">
+      <button type="button" data-assignee="Jonathan"><span class="assignee-avatar">JL</span><span><strong>Jonathan</strong><small>Owner · available</small></span><span class="check">✓</span></button>
+      <button type="button" data-assignee="Cindy"><span class="assignee-avatar alt">CL</span><span><strong>Cindy</strong><small>Collaborator</small></span><span class="check">✓</span></button>
+      <button type="button" data-assignee=""><span class="assignee-avatar muted-avatar">—</span><span><strong>Unassigned</strong><small>Return to the shared queue</small></span><span class="check">✓</span></button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="mock-leads.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

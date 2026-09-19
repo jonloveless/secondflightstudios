@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://secondflightstudios.com/schemas/sfs-lead.v1.json",
+  "title": "Second Flight Studios MVP Lead",
+  "description": "Canonical single-client lead object proposed for the SFS MVP.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "leadId",
+    "source",
+    "customerName",
+    "email",
+    "phone",
+    "company",
+    "originalInquiry",
+    "aiSummary",
+    "urgency",
+    "missingInformation",
+    "recommendedNextAction",
+    "preparedResponse",
+    "status",
+    "assignedPerson",
+    "createdTimestamp",
+    "updatedTimestamp",
+    "firstResponseTimestamp"
+  ],
+  "properties": {
+    "leadId": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "customerName": { "type": "string", "minLength": 1 },
+    "email": { "type": "string", "format": "email" },
+    "phone": { "type": ["string", "null"] },
+    "company": { "type": ["string", "null"] },
+    "originalInquiry": { "type": "string", "minLength": 1 },
+    "aiSummary": { "type": "string", "minLength": 1 },
+    "urgency": { "enum": ["Low", "Normal", "High", "Urgent"] },
+    "missingInformation": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "recommendedNextAction": { "type": "string", "minLength": 1 },
+    "preparedResponse": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["New", "Needs response", "Waiting on customer", "In progress", "Closed"]
+    },
+    "assignedPerson": { "type": ["string", "null"] },
+    "createdTimestamp": { "type": "string", "format": "date-time" },
+    "updatedTimestamp": { "type": "string", "format": "date-time" },
+    "firstResponseTimestamp": { "type": ["string", "null"], "format": "date-time" }
+  }
+}
